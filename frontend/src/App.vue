@@ -42,6 +42,7 @@
             />
 
             <SnakeGame v-if="win.type === 'snake'" />
+            <Visualizer v-if="win.type === 'visualizer'" />
         </WindowFrame>
 
         <!-- Taskbar -->
@@ -62,6 +63,9 @@ import LibreWebBrowser from "./components/LibreWebBrowser.vue";
 import Terminal from "./components/Terminal.vue";
 import CVEExplorer from "./components/CVEExplorer.vue";
 import SnakeGame from "./components/SnakeGame.vue";
+import SystemAudioAnalyzer from "./components/SystemAudioAnalyzer.vue";
+import Visualizer from "./components/VisualizerCore.vue";
+
 
 // Window management state
 const activeWindowId = ref("browser");
@@ -141,6 +145,18 @@ const windows = reactive([
         z: 4,
         type: "snake",
         icon: "🐍",
+    },
+    {
+        id: "visualizer",
+        title: "Audio Visualizer",
+        x: 200,
+        y: 200,
+        w: 700,
+        h: 500,
+        isOpen: false,
+        z: 5,
+        type: "visualizer",
+        icon: "🎨",
     },
 ]);
 
