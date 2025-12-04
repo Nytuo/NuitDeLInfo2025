@@ -50,6 +50,9 @@
             :active-window-id="activeWindowId"
             @focus-window="focusWindow"
         />
+
+        <!-- Clippy-style Assistant -->
+        <NexusClippy />
     </div>
 </template>
 
@@ -62,6 +65,7 @@ import LibreWebBrowser from "./components/LibreWebBrowser.vue";
 import Terminal from "./components/Terminal.vue";
 import CVEExplorer from "./components/CVEExplorer.vue";
 import SnakeGame from "./components/SnakeGame.vue";
+import NexusClippy from "./components/NexusClippy.vue";
 
 // Window management state
 const activeWindowId = ref("browser");

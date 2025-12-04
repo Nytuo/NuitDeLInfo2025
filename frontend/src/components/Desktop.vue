@@ -43,6 +43,13 @@
             </svg>
             <span class="text-xs">Terminal</span>
         </div>
+
+        <div class="desktop-icon" @click="$emit('open-window', 'nexus')">
+            <div class="icon-img bg-purple-900 border-2 border-cyan-400 p-1 flex items-center justify-center text-2xl">
+                🦎
+            </div>
+            <span class="text-xs text-cyan-300">Le Nexus</span>
+        </div>
     </div>
 </template>
 
