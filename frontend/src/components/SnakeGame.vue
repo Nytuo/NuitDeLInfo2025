@@ -1,6 +1,5 @@
 <template>
     <div class="h-full flex flex-col bg-black relative">
-        <!-- Codec UI Header -->
         <div
             class="codec-ui text-[10px] flex justify-between items-center h-16 shrink-0"
         >
@@ -25,7 +24,6 @@
             </div>
         </div>
 
-        <!-- Game Canvas Container -->
         <div
             class="flex-1 relative bg-[#111] flex items-center justify-center overflow-hidden"
             style="pointer-events: auto"
@@ -37,7 +35,6 @@
                 class="snake-canvas"
             ></canvas>
 
-            <!-- Start Overlay -->
             <div
                 v-if="!isPlaying && !isGameOver"
                 class="snake-overlay"
@@ -62,7 +59,6 @@
                 </button>
             </div>
 
-            <!-- Game Over Overlay -->
             <div
                 v-if="isGameOver"
                 class="snake-overlay"
@@ -95,33 +91,28 @@
 <script setup>
 import { ref, onMounted, onUnmounted, nextTick } from "vue";
 
-// Canvas dimensions
 const canvasWidth = 400;
 const canvasHeight = 400;
 const gridSize = 20;
 const gridCols = canvasWidth / gridSize;
 const gridRows = canvasHeight / gridSize;
 
-// Refs
 const canvasRef = ref(null);
 const isPlaying = ref(false);
 const isGameOver = ref(false);
 const score = ref(0);
 
-// Game state
 let ctx = null;
 let animationFrameId = null;
 let lastUpdateTime = 0;
-const updateInterval = 100; // milliseconds between updates
+const updateInterval = 100;
 
 let snake = [];
 let food = { x: 0, y: 0 };
 let direction = "RIGHT";
 let nextDirection = "RIGHT";
 
-// Initialize game
 const initGame = () => {
-    // Reset snake to starting position
     snake = [
         { x: 5, y: 5 },
         { x: 4, y: 5 },
@@ -136,7 +127,6 @@ const initGame = () => {
     spawnFood();
 };
 
-// Spawn food at random position
 const spawnFood = () => {
     let newFood;
     let isOnSnake;
@@ -147,7 +137,6 @@ const spawnFood = () => {
             y: Math.floor(Math.random() * gridRows),
         };
 
-        // Check if food spawned on snake
         isOnSnake = snake.some(
             (segment) => segment.x === newFood.x && segment.y === newFood.y,
         );
@@ -156,7 +145,6 @@ const spawnFood = () => {
     food = newFood;
 };
 
-// Start the game
 const startGame = async () => {
     await nextTick();
 
@@ -171,18 +159,15 @@ const startGame = async () => {
         return;
     }
 
-    // Disable image smoothing for crisp pixels
     ctx.imageSmoothingEnabled = false;
 
     initGame();
     isPlaying.value = true;
     lastUpdateTime = performance.now();
 
-    // Start game loop
     gameLoop(performance.now());
 };
 
-// Restart game
 const restartGame = () => {
     if (animationFrameId) {
         cancelAnimationFrame(animationFrameId);
@@ -190,7 +175,6 @@ const restartGame = () => {
     startGame();
 };
 
-// Main game loop using requestAnimationFrame
 const gameLoop = (currentTime) => {
     if (!isPlaying.value || isGameOver.value) {
         return;
@@ -198,24 +182,19 @@ const gameLoop = (currentTime) => {
 
     animationFrameId = requestAnimationFrame(gameLoop);
 
-    // Only update game state at fixed intervals
     if (currentTime - lastUpdateTime >= updateInterval) {
         updateGame();
         lastUpdateTime = currentTime;
     }
 
-    // Always draw (for smooth rendering)
     drawGame();
 };
 
-// Update game state
 const updateGame = () => {
     if (!isPlaying.value || isGameOver.value) return;
 
-    // Update direction
     direction = nextDirection;
 
-    // Calculate new head position
     const head = { ...snake[0] };
 
     switch (direction) {
@@ -233,48 +212,37 @@ const updateGame = () => {
             break;
     }
 
-    // Check wall collision
     if (head.x < 0 || head.x >= gridCols || head.y < 0 || head.y >= gridRows) {
         endGame();
         return;
     }
 
-    // Check self collision
     if (snake.some((segment) => segment.x === head.x && segment.y === head.y)) {
         endGame();
         return;
     }
 
-    // Add new head
     snake.unshift(head);
 
-    // Check food collision
     if (head.x === food.x && head.y === food.y) {
         score.value += 10;
         spawnFood();
-        // Don't remove tail (snake grows)
     } else {
-        // Remove tail (snake moves)
         snake.pop();
     }
 };
 
-// Draw game
 const drawGame = () => {
     if (!ctx || !canvasRef.value) return;
 
-    // Clear canvas completely - THIS IS THE KEY TO FIXING TRAILS
     ctx.clearRect(0, 0, canvasWidth, canvasHeight);
 
-    // Draw background
     ctx.fillStyle = "#051005";
     ctx.fillRect(0, 0, canvasWidth, canvasHeight);
 
-    // Draw grid
     ctx.strokeStyle = "#0f200f";
     ctx.lineWidth = 1;
 
-    // Vertical lines
     for (let x = 0; x <= canvasWidth; x += gridSize) {
         ctx.beginPath();
         ctx.moveTo(x, 0);
@@ -282,7 +250,6 @@ const drawGame = () => {
         ctx.stroke();
     }
 
-    // Horizontal lines
     for (let y = 0; y <= canvasHeight; y += gridSize) {
         ctx.beginPath();
         ctx.moveTo(0, y);
@@ -290,11 +257,9 @@ const drawGame = () => {
         ctx.stroke();
     }
 
-    // Draw snake
     snake.forEach((segment, index) => {
         const isHead = index === 0;
 
-        // Snake body color (lighter for head)
         ctx.fillStyle = isHead ? "#4ade80" : "#22c55e";
         ctx.fillRect(
             segment.x * gridSize + 1,
@@ -303,9 +268,8 @@ const drawGame = () => {
             gridSize - 2,
         );
 
-        // Draw bandana on head (Solid Snake reference!)
         if (isHead) {
-            ctx.fillStyle = "#dc2626"; // Red bandana
+            ctx.fillStyle = "#dc2626";
             ctx.fillRect(
                 segment.x * gridSize + 4,
                 segment.y * gridSize + 4,
@@ -315,7 +279,6 @@ const drawGame = () => {
         }
     });
 
-    // Draw food
     ctx.fillStyle = "#fbbf24";
     ctx.font = "bold 18px monospace";
     ctx.textAlign = "center";
@@ -327,7 +290,6 @@ const drawGame = () => {
     );
 };
 
-// End game
 const endGame = () => {
     isPlaying.value = false;
     isGameOver.value = true;
@@ -338,7 +300,6 @@ const endGame = () => {
     }
 };
 
-// Handle keyboard input
 const handleKeydown = (e) => {
     if (!isPlaying.value || isGameOver.value) return;
 
@@ -370,7 +331,6 @@ const handleKeydown = (e) => {
     }
 };
 
-// Lifecycle hooks
 onMounted(() => {
     window.addEventListener("keydown", handleKeydown);
 });
