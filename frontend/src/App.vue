@@ -112,38 +112,7 @@
                     ></iframe>
                 </div>
 
-                <div
-                    v-if="win.type === 'cve'"
-                    class="bg-gray-100 h-full font-mono p-2"
-                >
-                    <h2
-                        class="text-sm font-bold mb-4 border-b-2 border-red-500 pb-2"
-                    >
-                        ALERTES SÉCURITÉ GAFAM
-                    </h2>
-                    <div class="space-y-3">
-                        <div
-                            v-for="cve in cveList"
-                            :key="cve.id"
-                            class="border border-gray-400 p-2 bg-white shadow-sm flex items-start gap-2"
-                        >
-                            <div class="text-red-600 font-bold text-xl">!</div>
-                            <div>
-                                <div class="text-xs font-bold text-blue-800">
-                                    {{ cve.id }}
-                                </div>
-                                <div class="text-[10px] mt-1">
-                                    {{ cve.desc }}
-                                </div>
-                                <div
-                                    class="text-[10px] text-red-500 mt-1 font-bold"
-                                >
-                                    Risk: {{ cve.risk }}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                <CVEExplorer v-if="win.type === 'cve'" />
 
                 <div
                     v-if="win.type === 'terminal'"
@@ -274,6 +243,7 @@
 
 <script setup>
 import { ref, reactive, onMounted, onUnmounted, nextTick } from "vue";
+import CVEExplorer from "./components/CVEExplorer.vue";
 
 const activeWindowId = ref("browser");
 const isDragging = ref(false);
@@ -315,8 +285,8 @@ const windows = reactive([
         title: "GAFAM Vulnerability DB",
         x: 150,
         y: 80,
-        w: 400,
-        h: 400,
+        w: 600,
+        h: 500,
         isOpen: false,
         z: 2,
         type: "cve",
@@ -347,29 +317,6 @@ const windows = reactive([
         icon: "🐍",
     },
 ]);
-
-const cveList = [
-    {
-        id: "CVE-2025-WINDOWS-EOL",
-        desc: "Obsolescence forcée de millions de PC fonctionnels suite à la fin de support Win10.",
-        risk: "CRITICAL",
-    },
-    {
-        id: "CVE-CLOUD-DATA-LEAK",
-        desc: "Données scolaires stockées hors UE accessibles via Cloud Act.",
-        risk: "HIGH",
-    },
-    {
-        id: "CVE-VENDOR-LOCK-IN",
-        desc: "Dépendance totale aux suites bureautiques propriétaires. Coût de sortie prohibitif.",
-        risk: "MEDIUM",
-    },
-    {
-        id: "CVE-ECO-IMPACT",
-        desc: "Renouvellement matériel inutile générant 5000T de DEEE.",
-        risk: "HIGH",
-    },
-];
 
 const focusWindow = (id) => {
     activeWindowId.value = id;
@@ -572,6 +519,8 @@ const startGameWithCanvas = (canvas) => {
 
         console.log("✅ Got 2D context:", ctx);
 
+        ctx.imageSmoothingEnabled = false;
+
         snake = [
             { x: 5, y: 5 },
             { x: 4, y: 5 },
@@ -583,6 +532,7 @@ const startGameWithCanvas = (canvas) => {
         gameRunning.value = true;
         spawnFood();
 
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
         drawGame();
 
         if (gameLoop) clearInterval(gameLoop);
@@ -656,13 +606,33 @@ const updateGame = () => {
 
     snake.unshift(head);
 
+    console.log(
+        "Before update - snake length:",
+        snake.length,
+        "positions:",
+        snake,
+    );
+
     if (head.x === food.x && head.y === food.y) {
         snakeScore.value += 10;
         spawnFood();
+        console.log("🍎 Food eaten! New length:", snake.length);
     } else {
-        snake.pop();
+        const lengthBefore = snake.length;
+        const removed = snake.pop();
+        const lengthAfter = snake.length;
+        console.log(
+            "🐍 Pop called - Before:",
+            lengthBefore,
+            "After:",
+            lengthAfter,
+            "Removed:",
+            removed,
+        );
     }
 
+    console.log("After update - snake length:", snake.length);
+    console.log("Snake array:", JSON.stringify(snake));
     drawGame();
 };
 
@@ -673,7 +643,26 @@ const checkSelfCollision = (head) => {
 };
 
 const drawGame = () => {
-    if (!ctx || !gameCanvas.value) return;
+    if (!gameCanvas.value) {
+        console.error("❌ No canvas in drawGame");
+        return;
+    }
+
+    if (!ctx) {
+        console.error("❌ No context in drawGame, trying to get it");
+        ctx = gameCanvas.value.getContext("2d");
+        if (!ctx) {
+            console.error("❌ Failed to get context");
+            return;
+        }
+    }
+
+    console.log(
+        "🎨 About to draw",
+        snake.length,
+        "segments at positions:",
+        snake.slice(0, 3),
+    );
 
     ctx.clearRect(0, 0, gameCanvas.value.width, gameCanvas.value.height);
 
@@ -695,7 +684,9 @@ const drawGame = () => {
         ctx.stroke();
     }
 
+    console.log("🎨 Drawing loop - iterating over", snake.length, "segments");
     snake.forEach((seg, index) => {
+        console.log(`  Segment ${index}: (${seg.x}, ${seg.y})`);
         ctx.fillStyle = index === 0 ? "#4ade80" : "#22c55e";
         ctx.fillRect(
             seg.x * gridSize + 1,
@@ -714,6 +705,7 @@ const drawGame = () => {
             );
         }
     });
+    console.log("🎨 Finished drawing all segments");
 
     ctx.fillStyle = "#fbbf24";
     ctx.font = "20px monospace";
