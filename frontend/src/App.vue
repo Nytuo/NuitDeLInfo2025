@@ -26,7 +26,7 @@
             @focus="focusWindow(win.id)"
             @close="closeWindow(win.id)"
             @start-drag="startDrag($event, win.id)"
-            @start-resize="startResize($event, win.id, $arguments[1])"
+            @start-resize="startResize($event.event, win.id, $event.direction)"
         >
             <LibreWebBrowser
                 v-if="win.type === 'browser'"
