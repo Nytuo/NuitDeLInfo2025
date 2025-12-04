@@ -53,8 +53,9 @@
                             </button>
                         </div>
 
-                        <div class="text-xs text-gray-500">
-                            💡 Astuce: Saisissez CVE-2024-1234 ou un mot-clé comme "Oracle", "Microsoft", etc.
+                        <div class="text-xs text-gray-500 space-y-1">
+                            <div>💡 <strong>Recherche par CVE-ID:</strong> CVE-2024-1234, CVE-2023-44487</div>
+                            <div>💡 <strong>Recherche par mot-clé:</strong> "Microsoft", "Apache", "OpenSSL", "Log4j"</div>
                         </div>
                     </div>
                 </div>
@@ -70,6 +71,18 @@
                 </div>
 
                 <div v-if="currentCVE && !showThreatOverview" class="space-y-4">
+                    <div v-if="isKeywordSearch && totalResults > 1" class="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                        <div class="flex items-start gap-2">
+                            <span class="text-blue-600 text-xl">ℹ️</span>
+                            <div class="flex-1">
+                                <p class="text-xs text-blue-800">
+                                    <strong>{{ totalResults }} CVEs trouvées</strong> pour "{{ searchQuery }}".
+                                    Affichage de la première CVE. Utilisez le "Threat Overview" pour voir plus de résultats.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="bg-white rounded-lg shadow-md p-4">
                         <div class="flex items-start justify-between mb-3">
                             <h2 class="text-lg font-bold text-gray-800">{{ currentCVE.id }}</h2>
@@ -296,6 +309,8 @@ const loading = ref(false);
 const error = ref('');
 const suggestions = ref([]);
 const showSuggestions = ref(false);
+const totalResults = ref(0);
+const isKeywordSearch = ref(false);
 
 const showThreatOverview = ref(false);
 const threatKeyword = ref('');
@@ -305,7 +320,8 @@ const loadingThreat = ref(false);
 
 const commonCVEs = [
     'CVE-2024-21413', 'CVE-2024-3094', 'CVE-2024-4577',
-    'CVE-2023-44487', 'CVE-2023-23397', 'CVE-2023-0286'
+    'CVE-2023-44487', 'CVE-2023-23397', 'CVE-2023-0286',
+    'Microsoft', 'Apache', 'OpenSSL', 'Linux', 'Oracle', 'Cisco'
 ];
 
 const handleSearch = () => {
@@ -333,15 +349,34 @@ const searchCVE = async () => {
     error.value = '';
     showSuggestions.value = false;
     showThreatOverview.value = false;
+    totalResults.value = 0;
 
     try {
-        const response = await fetch(`https://services.nvd.nist.gov/rest/json/cves/2.0?cveId=${searchQuery.value}`);
+        // Detect if the search query is a CVE ID (CVE-YYYY-XXXXX format)
+        const isCVEId = /^CVE-\d{4}-\d{4,}$/i.test(searchQuery.value.trim());
+        isKeywordSearch.value = !isCVEId;
+
+        let url;
+        if (isCVEId) {
+            // Search by CVE ID
+            url = `https://services.nvd.nist.gov/rest/json/cves/2.0?cveId=${searchQuery.value.trim()}`;
+        } else {
+            // Search by keyword (vendor/product name)
+            url = `https://services.nvd.nist.gov/rest/json/cves/2.0?keywordSearch=${encodeURIComponent(searchQuery.value.trim())}&resultsPerPage=1`;
+        }
+
+        const response = await fetch(url);
 
         if (!response.ok) {
-            throw new Error('CVE non trouvée');
+            throw new Error('CVE non trouvée ou erreur réseau');
         }
 
         const data = await response.json();
+
+        // Track total results for keyword searches
+        if (data.totalResults) {
+            totalResults.value = data.totalResults;
+        }
 
         if (data.vulnerabilities && data.vulnerabilities.length > 0) {
             const vuln = data.vulnerabilities[0].cve;
@@ -365,7 +400,11 @@ const searchCVE = async () => {
                 source: 'NVD'
             };
         } else {
-            throw new Error('Aucune donnée trouvée pour cette CVE');
+            if (isCVEId) {
+                throw new Error('Aucune donnée trouvée pour cette CVE');
+            } else {
+                throw new Error(`Aucune CVE trouvée pour "${searchQuery.value}". Essayez un autre mot-clé ou un CVE-ID spécifique.`);
+            }
         }
     } catch (err) {
         error.value = err.message || 'Erreur lors de la récupération des données';

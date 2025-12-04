@@ -1,0 +1,391 @@
+<template>
+    <div class="h-full flex flex-col bg-black relative">
+        <!-- Codec UI Header -->
+        <div
+            class="codec-ui text-[10px] flex justify-between items-center h-16 shrink-0"
+        >
+            <div class="flex gap-2 items-center">
+                <div
+                    class="w-10 h-10 bg-green-900 border border-green-500 flex items-center justify-center overflow-hidden"
+                >
+                    <div
+                        class="text-[8px] leading-none text-green-300 whitespace-pre font-mono"
+                    >
+                        .--.<br />|o_o |<br />|:_/ |<br />// \
+                    </div>
+                </div>
+                <div>
+                    <div class="text-green-300 font-bold">SNAKE</div>
+                    <div>140.85</div>
+                </div>
+            </div>
+            <div class="text-right">
+                <div>MISSION: EAT THE DATA</div>
+                <div class="text-green-300">SCORE: {{ score }}</div>
+            </div>
+        </div>
+
+        <!-- Game Canvas Container -->
+        <div
+            class="flex-1 relative bg-[#111] flex items-center justify-center overflow-hidden"
+            style="pointer-events: auto"
+        >
+            <canvas
+                ref="canvasRef"
+                :width="canvasWidth"
+                :height="canvasHeight"
+                class="snake-canvas"
+            ></canvas>
+
+            <!-- Start Overlay -->
+            <div
+                v-if="!isPlaying && !isGameOver"
+                class="snake-overlay"
+                style="pointer-events: auto"
+            >
+                <h1 class="text-xl text-red-500 mb-4 font-bold tracking-widest">
+                    TACTICAL MISSION START
+                </h1>
+                <button
+                    @click.stop="startGame"
+                    @mousedown.prevent
+                    class="px-4 py-2 border-2 border-green-500 text-green-500 hover:bg-green-900 hover:text-white transition-colors text-xs blink font-bold"
+                    style="
+                        pointer-events: auto !important;
+                        cursor: pointer !important;
+                        z-index: 1002 !important;
+                        position: relative;
+                        background: rgba(0, 50, 0, 0.5);
+                    "
+                >
+                    ► PRESS START ◄
+                </button>
+            </div>
+
+            <!-- Game Over Overlay -->
+            <div
+                v-if="isGameOver"
+                class="snake-overlay"
+                style="pointer-events: auto"
+            >
+                <h1
+                    class="text-xl text-red-500 mb-4 font-bold tracking-widest animate-pulse"
+                >
+                    SNAKE? SNAKE! SNAKEEEEE!
+                </h1>
+                <button
+                    @click.stop="restartGame"
+                    @mousedown.prevent
+                    class="px-4 py-2 border-2 border-green-500 text-green-500 hover:bg-green-900 hover:text-white transition-colors text-xs blink font-bold"
+                    style="
+                        pointer-events: auto !important;
+                        cursor: pointer !important;
+                        z-index: 1002 !important;
+                        position: relative;
+                        background: rgba(0, 50, 0, 0.5);
+                    "
+                >
+                    🔄 RETRY MISSION
+                </button>
+            </div>
+        </div>
+    </div>
+</template>
+
+<script setup>
+import { ref, onMounted, onUnmounted, nextTick } from "vue";
+
+// Canvas dimensions
+const canvasWidth = 400;
+const canvasHeight = 400;
+const gridSize = 20;
+const gridCols = canvasWidth / gridSize;
+const gridRows = canvasHeight / gridSize;
+
+// Refs
+const canvasRef = ref(null);
+const isPlaying = ref(false);
+const isGameOver = ref(false);
+const score = ref(0);
+
+// Game state
+let ctx = null;
+let animationFrameId = null;
+let lastUpdateTime = 0;
+const updateInterval = 100; // milliseconds between updates
+
+let snake = [];
+let food = { x: 0, y: 0 };
+let direction = "RIGHT";
+let nextDirection = "RIGHT";
+
+// Initialize game
+const initGame = () => {
+    // Reset snake to starting position
+    snake = [
+        { x: 5, y: 5 },
+        { x: 4, y: 5 },
+        { x: 3, y: 5 },
+    ];
+
+    direction = "RIGHT";
+    nextDirection = "RIGHT";
+    score.value = 0;
+    isGameOver.value = false;
+
+    spawnFood();
+};
+
+// Spawn food at random position
+const spawnFood = () => {
+    let newFood;
+    let isOnSnake;
+
+    do {
+        newFood = {
+            x: Math.floor(Math.random() * gridCols),
+            y: Math.floor(Math.random() * gridRows),
+        };
+
+        // Check if food spawned on snake
+        isOnSnake = snake.some(
+            (segment) => segment.x === newFood.x && segment.y === newFood.y,
+        );
+    } while (isOnSnake);
+
+    food = newFood;
+};
+
+// Start the game
+const startGame = async () => {
+    await nextTick();
+
+    if (!canvasRef.value) {
+        console.error("Canvas not found!");
+        return;
+    }
+
+    ctx = canvasRef.value.getContext("2d", { alpha: false });
+    if (!ctx) {
+        console.error("Could not get 2D context!");
+        return;
+    }
+
+    // Disable image smoothing for crisp pixels
+    ctx.imageSmoothingEnabled = false;
+
+    initGame();
+    isPlaying.value = true;
+    lastUpdateTime = performance.now();
+
+    // Start game loop
+    gameLoop(performance.now());
+};
+
+// Restart game
+const restartGame = () => {
+    if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId);
+    }
+    startGame();
+};
+
+// Main game loop using requestAnimationFrame
+const gameLoop = (currentTime) => {
+    if (!isPlaying.value || isGameOver.value) {
+        return;
+    }
+
+    animationFrameId = requestAnimationFrame(gameLoop);
+
+    // Only update game state at fixed intervals
+    if (currentTime - lastUpdateTime >= updateInterval) {
+        updateGame();
+        lastUpdateTime = currentTime;
+    }
+
+    // Always draw (for smooth rendering)
+    drawGame();
+};
+
+// Update game state
+const updateGame = () => {
+    if (!isPlaying.value || isGameOver.value) return;
+
+    // Update direction
+    direction = nextDirection;
+
+    // Calculate new head position
+    const head = { ...snake[0] };
+
+    switch (direction) {
+        case "UP":
+            head.y--;
+            break;
+        case "DOWN":
+            head.y++;
+            break;
+        case "LEFT":
+            head.x--;
+            break;
+        case "RIGHT":
+            head.x++;
+            break;
+    }
+
+    // Check wall collision
+    if (head.x < 0 || head.x >= gridCols || head.y < 0 || head.y >= gridRows) {
+        endGame();
+        return;
+    }
+
+    // Check self collision
+    if (snake.some((segment) => segment.x === head.x && segment.y === head.y)) {
+        endGame();
+        return;
+    }
+
+    // Add new head
+    snake.unshift(head);
+
+    // Check food collision
+    if (head.x === food.x && head.y === food.y) {
+        score.value += 10;
+        spawnFood();
+        // Don't remove tail (snake grows)
+    } else {
+        // Remove tail (snake moves)
+        snake.pop();
+    }
+};
+
+// Draw game
+const drawGame = () => {
+    if (!ctx || !canvasRef.value) return;
+
+    // Clear canvas completely - THIS IS THE KEY TO FIXING TRAILS
+    ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+
+    // Draw background
+    ctx.fillStyle = "#051005";
+    ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+
+    // Draw grid
+    ctx.strokeStyle = "#0f200f";
+    ctx.lineWidth = 1;
+
+    // Vertical lines
+    for (let x = 0; x <= canvasWidth; x += gridSize) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, canvasHeight);
+        ctx.stroke();
+    }
+
+    // Horizontal lines
+    for (let y = 0; y <= canvasHeight; y += gridSize) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(canvasWidth, y);
+        ctx.stroke();
+    }
+
+    // Draw snake
+    snake.forEach((segment, index) => {
+        const isHead = index === 0;
+
+        // Snake body color (lighter for head)
+        ctx.fillStyle = isHead ? "#4ade80" : "#22c55e";
+        ctx.fillRect(
+            segment.x * gridSize + 1,
+            segment.y * gridSize + 1,
+            gridSize - 2,
+            gridSize - 2,
+        );
+
+        // Draw bandana on head (Solid Snake reference!)
+        if (isHead) {
+            ctx.fillStyle = "#dc2626"; // Red bandana
+            ctx.fillRect(
+                segment.x * gridSize + 4,
+                segment.y * gridSize + 4,
+                gridSize - 8,
+                4,
+            );
+        }
+    });
+
+    // Draw food
+    ctx.fillStyle = "#fbbf24";
+    ctx.font = "bold 18px monospace";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(
+        "!",
+        food.x * gridSize + gridSize / 2,
+        food.y * gridSize + gridSize / 2,
+    );
+};
+
+// End game
+const endGame = () => {
+    isPlaying.value = false;
+    isGameOver.value = true;
+
+    if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId);
+        animationFrameId = null;
+    }
+};
+
+// Handle keyboard input
+const handleKeydown = (e) => {
+    if (!isPlaying.value || isGameOver.value) return;
+
+    switch (e.key) {
+        case "ArrowUp":
+        case "w":
+        case "W":
+            if (direction !== "DOWN") nextDirection = "UP";
+            e.preventDefault();
+            break;
+        case "ArrowDown":
+        case "s":
+        case "S":
+            if (direction !== "UP") nextDirection = "DOWN";
+            e.preventDefault();
+            break;
+        case "ArrowLeft":
+        case "a":
+        case "A":
+            if (direction !== "RIGHT") nextDirection = "LEFT";
+            e.preventDefault();
+            break;
+        case "ArrowRight":
+        case "d":
+        case "D":
+            if (direction !== "LEFT") nextDirection = "RIGHT";
+            e.preventDefault();
+            break;
+    }
+};
+
+// Lifecycle hooks
+onMounted(() => {
+    window.addEventListener("keydown", handleKeydown);
+});
+
+onUnmounted(() => {
+    window.removeEventListener("keydown", handleKeydown);
+    if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId);
+    }
+});
+</script>
+
+<style scoped>
+canvas {
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+}
+</style>
