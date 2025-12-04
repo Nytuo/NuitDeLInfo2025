@@ -4,6 +4,12 @@ import { useRouter } from 'vue-router';
 import type { ChatMessage, ChatOption, UserData, MissionType } from '@/shared/models/FormTypes';
 import { AIService } from '@/shared/services/AIService';
 
+const props = withDefaults(defineProps<{
+  widgetMode?: boolean;
+}>(), {
+  widgetMode: false,
+});
+
 const router = useRouter();
 
 const messages = ref<ChatMessage[]>([]);
@@ -12,6 +18,7 @@ const isTyping = ref(false);
 const chatContainer = ref<HTMLElement | null>(null);
 const currentStep = ref(0);
 const suggestions = ref<string[]>([]);
+const isCompleted = ref(false);
 
 const userData = reactive<UserData>({
   name: '',
@@ -319,16 +326,31 @@ async function finishConversation() {
   
   await simulateTyping(1500);
   
-  // Redirection vers la page de confirmation
-  router.push({
-    name: 'confirmation',
-    query: {
-      name: userData.name,
-      mission: userData.mission,
-      amount: userData.donationAmount?.toString(),
-      recurrence: userData.donationRecurrence,
-    },
-  });
+  if (props.widgetMode) {
+    // Mode widget : afficher la confirmation dans le chat
+    isCompleted.value = true;
+    const confirmationMessage = AIService.generateConfirmationMessage(userData);
+    addMessage({
+      type: 'bot',
+      content: confirmationMessage,
+    });
+    await simulateTyping(500);
+    addMessage({
+      type: 'bot',
+      content: `✨ Ton soutien en ${year} est crucial pour notre progression ! Reste connecté pour suivre nos exploits.`,
+    });
+  } else {
+    // Mode page : redirection vers la page de confirmation
+    router.push({
+      name: 'confirmation',
+      query: {
+        name: userData.name,
+        mission: userData.mission,
+        amount: userData.donationAmount?.toString(),
+        recurrence: userData.donationRecurrence,
+      },
+    });
+  }
 }
 
 function handleInputChange() {
