@@ -44,11 +44,24 @@
             <span class="text-xs">Terminal</span>
         </div>
 
-        <div class="desktop-icon" @click="$emit('open-window', 'nexus')">
-            <div class="icon-img bg-purple-900 border-2 border-cyan-400 p-1 flex items-center justify-center text-2xl">
-                🦎
-            </div>
-            <span class="text-xs text-cyan-300">Le Nexus</span>
+        <div class="desktop-icon" @click="$emit('open-window', 'visualizer')">
+            <svg
+                class="icon-img text-purple-400 bg-gray-900 border-2 border-white p-1"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+            >
+                <line x1="4"  y1="18" x2="4"  y2="10"></line>
+                <line x1="9"  y1="18" x2="9"  y2="6"></line>
+                <line x1="14" y1="18" x2="14" y2="12"></line>
+                <line x1="19" y1="18" x2="19" y2="8"></line>
+            </svg>
+            <span class="text-xs">
+                Audio
+                Master
+                2000
+            </span>
         </div>
     </div>
 </template>

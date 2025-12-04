@@ -29,35 +29,35 @@
 
         <div
             class="resize-handle resize-handle-e"
-            @mousedown.stop="handleResizeMouseDown($event, 'e')"
+            @mousedown.stop="(e) => handleResizeMouseDown(e, 'e')"
         ></div>
         <div
             class="resize-handle resize-handle-s"
-            @mousedown.stop="handleResizeMouseDown($event, 's')"
+            @mousedown.stop="(e) => handleResizeMouseDown(e, 's')"
         ></div>
         <div
             class="resize-handle resize-handle-w"
-            @mousedown.stop="handleResizeMouseDown($event, 'w')"
+            @mousedown.stop="(e) => handleResizeMouseDown(e, 'w')"
         ></div>
         <div
             class="resize-handle resize-handle-n"
-            @mousedown.stop="handleResizeMouseDown($event, 'n')"
+            @mousedown.stop="(e) => handleResizeMouseDown(e, 'n')"
         ></div>
         <div
             class="resize-handle resize-handle-se"
-            @mousedown.stop="handleResizeMouseDown($event, 'se')"
+            @mousedown.stop="(e) => handleResizeMouseDown(e, 'se')"
         ></div>
         <div
             class="resize-handle resize-handle-sw"
-            @mousedown.stop="handleResizeMouseDown($event, 'sw')"
+            @mousedown.stop="(e) => handleResizeMouseDown(e, 'sw')"
         ></div>
         <div
             class="resize-handle resize-handle-ne"
-            @mousedown.stop="handleResizeMouseDown($event, 'ne')"
+            @mousedown.stop="(e) => handleResizeMouseDown(e, 'ne')"
         ></div>
         <div
             class="resize-handle resize-handle-nw"
-            @mousedown.stop="handleResizeMouseDown($event, 'nw')"
+            @mousedown.stop="(e) => handleResizeMouseDown(e, 'nw')"
         ></div>
     </div>
 </template>
@@ -113,7 +113,7 @@ const handleTitleBarMouseDown = (e) => {
 };
 
 const handleResizeMouseDown = (e, direction) => {
-    emit("start-resize", e, direction);
+    emit("start-resize", { event: e, direction });
 };
 </script>
 
