@@ -1,0 +1,166 @@
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                                                                              ║
+║   ███╗   ██╗██╗   ██╗██╗████████╗    ██████╗ ███████╗    ██╗     ██╗███╗   ██╗███████╗ ██████╗  ║
+║   ████╗  ██║██║   ██║██║╚══██╔══╝    ██╔══██╗██╔════╝    ██║     ██║████╗  ██║██╔════╝██╔═══██╗ ║
+║   ██╔██╗ ██║██║   ██║██║   ██║       ██║  ██║█████╗      ██║     ██║██╔██╗ ██║█████╗  ██║   ██║ ║
+║   ██║╚██╗██║██║   ██║██║   ██║       ██║  ██║██╔══╝      ██║     ██║██║╚██╗██║██╔══╝  ██║   ██║ ║
+║   ██║ ╚████║╚██████╔╝██║   ██║       ██████╔╝███████╗    ███████╗██║██║ ╚████║██║     ╚██████╔╝ ║
+║   ╚═╝  ╚═══╝ ╚═════╝ ╚═╝   ╚═╝       ╚═════╝ ╚══════╝    ╚══════╝╚═╝╚═╝  ╚═══╝╚═╝      ╚═════╝  ║
+║                                                                              ║
+║                        ╔═══════════════════════════════╗                     ║
+║                        ║   TempleOS2  - Edition 2025   ║                     ║
+║                        ╚═══════════════════════════════╝                     ║
+║                                                                              ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ SYSTEM INFORMATION                                                           │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  PROJECT NAME    : TempleOS                                                  │
+│  VERSION         : 1.0.0-nuitdelinfo2025                                     │
+│  ARCHITECTURE    : x86-64 Web Assembly Compatible                            │
+│  KERNEL          : Vue.js 3.5.24                                             │
+│  BOOT LOADER     : Vite 7.2.5 (Rolldown Edition)                             │
+│  SHELL           : TempleOS2 Terminal                                        │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ NETWORK ACCESS POINT                                                         │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  >> URL:                                │
+│                                                                              │
+│  [STATUS] █████████████████████████ ONLINE                                   │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ CLASSIFIED INFORMATION - LEVEL: TACTICAL ESPIONAGE                           │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  [!] SECRET ACTIVATION CODE DETECTED                                         │
+│                                                                              │
+│  To unlock the hidden SNAKE GAME, execute the following key sequence:        │
+│                                                                              │
+│      ╔════════════════════════════════════════════════════╗                  │
+│      ║  ↑  ↑  ↓  ↓  ←  →  ←  →  [B]  [A]                  ║                  │
+│      ╚════════════════════════════════════════════════════╝                  │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ INSTALLED APPLICATIONS                                                       │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  [01]    OpenWeb Navigator ............... Web Browser                       │
+│  [02]    GAFAM Vulnerability DB ......... CVE Explorer & Threat Analysis     │
+│  [03]    TempleOS2 Terminal .............. Interactive Shell Environment     │
+│  [04]    TACTICAL_ESPIONAGE.exe .......... [CLASSIFIED]                      │
+│  [05]    Audio Visualizer ................ Real-time 3D Audio Analysis       │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ AUDIO VISUALIZER - OPERATION MANUAL                                          │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  [STEP 1] Click Audio Visualizer icon on desktop                             │
+│  [STEP 2] Press "Start Capture" button                                       │
+│  [STEP 3] Browser will request screen/tab sharing permission                 │
+│  [STEP 4] ✓ CHECK "Share audio" checkbox in popup dialog                     │
+│  [STEP 5] Select tab playing audio (YouTube, Spotify, etc.)                  │
+│  [STEP 6] Enjoy real-time 3D visualization                                   │
+│                                                                              │
+│  [!] REQUIRES: Modern browser with Display Media API support                 │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ CVE EXPLORER - TECHNICAL SPECIFICATIONS                                      │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│                                                                              │
+│  ┌────────────────────────────────────────────────────────────────────────┐  │
+│  │ OPERATIONAL MODE                                                       │  │
+│  ├────────────────────────────────────────────────────────────────────────┤  │
+│  │  [1] Search by CVE ID: CVE-YYYY-NNNNN format                           │  │
+│  │  [2] Search by Keyword: Full-text in vulnerability descriptions        │  │
+│  │  [3] Threat Overview: Statistical analysis over time period            │  │
+│  └────────────────────────────────────────────────────────────────────────┘  │
+│                                                                              │
+│  ┌────────────────────────────────────────────────────────────────────────┐  │
+│  │ DATA SOURCES / APIS                                                    │  │
+│  ├────────────────────────────────────────────────────────────────────────┤  │
+│  │  API #1: NIST NVD (National Vulnerability Database)                    │  │
+│  │          https://services.nvd.nist.gov/rest/json/cves/2.0              │  │
+│  │          └─ Primary source for CVE details                             │  │
+│  │                                                                        │  │
+│  │  API #2: CIRCL CVE-Search                                              │  │
+│  │          https://cve.circl.lu/api/search/                              │  │
+│  │          └─ Keyword search and aggregation                             │  │
+│  └────────────────────────────────────────────────────────────────────────┘  │
+│                                                                              │
+│  ┌────────────────────────────────────────────────────────────────────────┐  │
+│  │ DISPLAYED METRICS                                                      │  │
+│  ├────────────────────────────────────────────────────────────────────────┤  │
+│  │  • CVSS Score ......... Severity rating (0.0 - 10.0)                   │  │
+│  │  • EPSS Probability ... Exploit prediction (0% - 100%)                 │  │
+│  │  • KEV Status ......... Known Exploited Vulnerability flag             │  │
+│  │  • CWE Classification . Common Weakness Enumeration                    │  │
+│  │  • CPE Data ........... Affected products (Common Platform Enum.)      │  │
+│  │  • Temporal Data ...... Publication & modification dates               │  │
+│  └────────────────────────────────────────────────────────────────────────┘  │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ SYSTEM ARCHITECTURE                                                          │
+├──────────────────────────────────────────────────────────────────────────────┤
+│  TECH STACK:                                                                 │
+│    ├─ Frontend Framework: Vue.js 3 (Composition API)                         │
+│    ├─ Language: TypeScript                                                   │
+│    ├─ Build Tool: Vite 7 (Rolldown)                                          │
+│    ├─ 3D Engine: Three.js                                                    │
+│    ├─ Router: Vue Router 4                                                   │
+│    └─ APIs: Web Audio API, Display Media API                                 │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ BOOT SEQUENCE                                                                │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  $ cd frontend                                                               │
+│  $ npm install           # Install dependencies                              │
+│  $ npm run dev           # Start development server → http://localhost:5173  │
+│  $ npm run build         # Production build → dist/                          │
+│  $ npm run preview       # Preview production build                          │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ TERMINAL COMMANDS                                                            │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  help ........... Display command list                                       │
+│  ls ............. List directory contents                                    │
+│  cat [file] ..... Display file contents                                      │
+│  clear .......... Clear terminal screen                                      │
+│  date ........... Show current date/time                                     │
+│  echo [text] .... Print text to console                                      │
+│  neofetch ....... Display system information (ASCII art)                     │
+│  snake .......... Launch TACTICAL_ESPIONAGE.exe                              │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                                                                              ║
+║    Made with ❤️ by Arnaud BEUX and Maxime Semmard for Nuit de l'Info 2025    ║
+║                                                                              ║
+║                      Press any key to continue...                            ║
+║                                                                              ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+[END OF FILE]
