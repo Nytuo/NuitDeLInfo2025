@@ -95,7 +95,7 @@ TempleOS2 est une interface de bureau rétro inspirée des années 90, recréant
 ## Audio Visualizer - Instructions
 
 ### Prérequis
-- Navigateur moderne (Chrome, Edge, Firefox recommandés)
+- Navigateur moderne (Chrome)
 - Onglet jouant de l'audio (YouTube, Spotify Web, SoundCloud, etc.)
 
 ### Mode d'emploi
@@ -110,8 +110,6 @@ TempleOS2 est une interface de bureau rétro inspirée des années 90, recréant
 
 3. **Profiter de la visualisation** :
    - Le visualiseur 3D réagira en temps réel à la musique
-
-4. **Arrêter la capture** : Cliquez sur "Stop Capture"
 
 ### Troubleshooting
 - Si aucun son n'est détecté, vérifiez que vous avez bien coché "Partager l'audio"
