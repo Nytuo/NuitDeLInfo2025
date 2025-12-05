@@ -1,22 +1,19 @@
 <template>
     <div class="clippy-container" :class="{ 'clippy-hidden': isHidden }">
-        <!-- Mascotte Axolotl Pixel Art Style -->
+        <!-- Mascotte Chevalier Pixel Art -->
         <div 
             class="clippy-mascot"
             @click="toggleChat"
             :class="{ 'clippy-idle': isIdle && !isChatOpen, 'clippy-active': isChatOpen }"
         >
-            <div class="axolotl-sprite">
-                <div class="axolotl-glow"></div>
-                <div class="axolotl-body">
-                    <div class="axolotl-gill left"></div>
-                    <div class="axolotl-gill right"></div>
-                    <div class="axolotl-face">
-                        <div class="eye left" :class="{ 'blink': isBlinking }"></div>
-                        <div class="eye right" :class="{ 'blink': isBlinking }"></div>
-                        <div class="mouth" :class="{ 'talking': isTalking }"></div>
-                    </div>
-                </div>
+            <div class="knight-sprite">
+                <div class="knight-glow"></div>
+                <img 
+                    src="/images/knight-mascot.png" 
+                    alt="Nexus Knight" 
+                    class="knight-img"
+                    :class="{ 'talking': isTalking, 'idle': isIdle }"
+                />
                 <div class="status-led" :class="{ 'active': isChatOpen }"></div>
             </div>
         </div>
@@ -69,9 +66,10 @@
                         <!-- Formulaire style DOS -->
                         <div v-if="message.fields" class="form-block">
                             <div v-for="field in message.fields" :key="field.name" class="form-field">
-                                <label>{{ field.label }}:</label>
+                                <label :for="'field-' + field.name">{{ field.label }}:</label>
                                 <input 
                                     v-if="field.type === 'text' || field.type === 'email' || field.type === 'tel'"
+                                    :id="'field-' + field.name"
                                     :type="field.type"
                                     v-model="formData[field.name]"
                                     :placeholder="field.placeholder"
@@ -140,6 +138,12 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted, onUnmounted, nextTick, watch } from 'vue';
+import emailjs from '@emailjs/browser';
+
+// Configuration EmailJS
+const EMAILJS_SERVICE_ID = 'service_cgqx7v1';
+const EMAILJS_TEMPLATE_ID = 'template_f8pun97';
+const EMAILJS_PUBLIC_KEY = 'roNAqnoiKqIdfa610';
 
 interface ChatMessage {
     type: 'bot' | 'user';
@@ -159,6 +163,10 @@ const notificationText = ref("Cliquez pour interagir...");
 const chatContainer = ref<HTMLElement | null>(null);
 const inputField = ref<HTMLInputElement | null>(null);
 const userInput = ref('');
+
+// Mascot image
+const mascotLoaded = ref(true);
+const mascotSrc = ref('/images/knight-mascot.png');
 
 const messages = ref<ChatMessage[]>([]);
 const formData = reactive<Record<string, string>>({});
@@ -526,8 +534,48 @@ const submitFields = async () => {
     addUserMessage(`[SUBMIT] ${filled}`);
     await new Promise(r => setTimeout(r, 400));
     
+    // Envoi réel via EmailJS
+    let emailSent = false;
     const name = formData.name || 'Utilisateur';
+    
+    // Construire le titre selon la mission
+    let title = '';
+    switch (selectedMission.value) {
+        case 'contact':
+            title = `Contact: ${formData.message?.substring(0, 50) || 'Message'}...`;
+            break;
+        case 'donation':
+            title = `Don de ${formData.amount}€ (${formData.recurrence || 'unique'})`;
+            break;
+        case 'volunteer':
+            title = `Candidature bénévole - ${formData.skills || 'Général'}`;
+            break;
+        default:
+            title = `Demande d'information`;
+    }
+    
+    try {
+        const templateParams = {
+            name: name,
+            title: title
+        };
+        
+        // Vérifie si les clés EmailJS sont configurées
+        if (EMAILJS_SERVICE_ID !== 'YOUR_SERVICE_ID') {
+            await emailjs.send(
+                EMAILJS_SERVICE_ID,
+                EMAILJS_TEMPLATE_ID,
+                templateParams,
+                EMAILJS_PUBLIC_KEY
+            );
+            emailSent = true;
+        }
+    } catch (error) {
+        console.error('Erreur EmailJS:', error);
+    }
+    
     const currentYear = new Date().getFullYear();
+    const emailStatus = emailSent ? '📧 Email envoyé !' : '📧 (Mode démo - email non configuré)';
     let msg = '';
     
     switch (selectedMission.value) {
@@ -543,7 +591,7 @@ Nos Agents de Support 🕵️ te répondront sous 24h.
 
 📅 Ton soutien en ${currentYear} est crucial pour notre progression !
 
-Reste connecté pour suivre nos exploits tout au long de l'année ${currentYear} !
+${emailStatus}
 
 [STATUT: ENREGISTRÉ ✅]`;
             break;
@@ -561,9 +609,7 @@ Il permettra de financer :
 > 🎓 Nos ateliers de formation gratuits
 > 💻 L'infrastructure de nos services
 
-Grâce à toi, nous avançons sur nos objectifs ${currentYear} !
-
-📧 Email de confirmation envoyé.
+${emailStatus}
 
 [TRANSACTION SÉCURISÉE 🔐]`;
             break;
@@ -581,9 +627,7 @@ Compétences enregistrées: ${formData.skills || 'Non spécifié'}
 > 🤖 Atelier IA Responsable - Janvier ${currentYear + 1}
 > 🌱 Hackathon Écologique - Février ${currentYear + 1}
 
-Reste connecté pour suivre nos exploits tout au long de l'année ${currentYear} !
-
-📧 Instructions envoyées par email.
+${emailStatus}
 
 [RECRUTEMENT VALIDÉ ✅]`;
             break;
@@ -630,25 +674,70 @@ watch(messages, () => scrollToBottom(), { deep: true });
 
 /* Mascotte style pixel */
 .clippy-mascot {
-    width: 70px;
-    height: 70px;
+    width: 100px;
+    height: 100px;
     cursor: pointer;
     position: relative;
 }
 
-.axolotl-sprite {
+.knight-sprite {
     width: 100%;
     height: 100%;
     position: relative;
 }
 
-.axolotl-glow {
+.knight-glow {
     position: absolute;
-    inset: -5px;
-    background: #00ff88;
-    opacity: 0.15;
+    inset: -8px;
+    background: #00bfff;
+    opacity: 0.2;
     border-radius: 50%;
     animation: glow-pulse 2s ease-in-out infinite;
+}
+
+.knight-img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    filter: drop-shadow(0 0 8px rgba(0, 191, 255, 0.6));
+    transition: transform 0.2s ease;
+}
+
+.knight-img.idle,
+.knight-fallback.idle {
+    animation: idle-float 3s ease-in-out infinite;
+}
+
+.knight-img.talking,
+.knight-fallback.talking {
+    animation: knight-talk 0.3s ease-in-out infinite;
+}
+
+.knight-fallback {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 60px;
+    filter: drop-shadow(0 0 8px rgba(0, 191, 255, 0.6));
+    transition: transform 0.2s ease;
+}
+
+@keyframes knight-talk {
+    0%, 100% { transform: scale(1) rotate(0deg); }
+    25% { transform: scale(1.02) rotate(-2deg); }
+    75% { transform: scale(1.02) rotate(2deg); }
+}
+
+.clippy-mascot:hover .knight-img,
+.clippy-mascot:hover .knight-fallback {
+    transform: scale(1.1);
+    filter: drop-shadow(0 0 15px rgba(0, 191, 255, 0.8));
+}
+
+.clippy-mascot:hover .knight-glow {
+    opacity: 0.4;
 }
 
 @keyframes glow-pulse {
@@ -656,117 +745,9 @@ watch(messages, () => scrollToBottom(), { deep: true });
     50% { opacity: 0.25; transform: scale(1.05); }
 }
 
-.axolotl-body {
-    width: 60px;
-    height: 55px;
-    background: #ff1493;
-    border: 3px solid #00ff88;
-    border-radius: 30px 30px 25px 25px;
-    position: absolute;
-    bottom: 5px;
-    left: 50%;
-    transform: translateX(-50%);
-    box-shadow: 
-        0 0 10px rgba(0, 255, 136, 0.5),
-        inset 0 -10px 20px rgba(0, 0, 0, 0.2);
-}
-
-.axolotl-gill {
-    position: absolute;
-    top: -12px;
-    width: 18px;
-    height: 22px;
-    background: #ff69b4;
-    border: 2px solid #00ff88;
-    border-radius: 50% 50% 20% 20%;
-}
-
-.axolotl-gill.left {
-    left: 2px;
-    transform: rotate(-25deg);
-}
-
-.axolotl-gill.right {
-    right: 2px;
-    transform: rotate(25deg);
-}
-
-.axolotl-gill::before,
-.axolotl-gill::after {
-    content: '';
-    position: absolute;
-    width: 10px;
-    height: 16px;
-    background: #ff69b4;
-    border: 2px solid #00ff88;
-    border-radius: 50% 50% 20% 20%;
-    top: -5px;
-}
-
-.axolotl-gill::before { left: -8px; }
-.axolotl-gill::after { right: -8px; }
-
-.axolotl-face {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -40%);
-    width: 40px;
-    height: 30px;
-}
-
-.eye {
-    position: absolute;
-    width: 10px;
-    height: 10px;
-    background: #000;
-    border-radius: 50%;
-    top: 5px;
-    border: 2px solid #00ff88;
-    box-shadow: 0 0 5px #00ff88;
-}
-
-.eye.left { left: 3px; }
-.eye.right { right: 3px; }
-
-.eye::after {
-    content: '';
-    position: absolute;
-    width: 4px;
-    height: 4px;
-    background: #fff;
-    border-radius: 50%;
-    top: 1px;
-    left: 1px;
-}
-
-.eye.blink {
-    height: 3px;
-    top: 8px;
-}
-
-.eye.blink::after { display: none; }
-
-.mouth {
-    position: absolute;
-    bottom: 2px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 12px;
-    height: 6px;
-    border: 2px solid #000;
-    border-top: none;
-    border-radius: 0 0 10px 10px;
-    background: #cc0066;
-}
-
-.mouth.talking {
-    animation: talk 0.15s ease-in-out infinite;
-}
-
-@keyframes talk {
-    0%, 100% { height: 6px; }
-    50% { height: 10px; }
+@keyframes idle-float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
 }
 
 .status-led {
@@ -789,19 +770,6 @@ watch(messages, () => scrollToBottom(), { deep: true });
 @keyframes led-blink {
     0%, 100% { opacity: 1; }
     50% { opacity: 0.6; }
-}
-
-.clippy-idle .axolotl-body {
-    animation: idle-float 3s ease-in-out infinite;
-}
-
-@keyframes idle-float {
-    0%, 100% { transform: translateX(-50%) translateY(0); }
-    50% { transform: translateX(-50%) translateY(-5px); }
-}
-
-.clippy-mascot:hover .axolotl-glow {
-    opacity: 0.4;
 }
 
 /* Notification style terminal */

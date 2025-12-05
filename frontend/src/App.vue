@@ -68,6 +68,7 @@ import CVEExplorer from "./components/CVEExplorer.vue";
 import SnakeGame from "./components/SnakeGame.vue";
 import SystemAudioAnalyzer from "./components/SystemAudioAnalyzer.vue";
 import Visualizer from "./components/VisualizerCore.vue";
+import NexusClippy from "./components/NexusClippy.vue";
 
 
 // Window management state
