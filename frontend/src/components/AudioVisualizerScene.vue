@@ -1,5 +1,4 @@
 <template>
-  <!-- Conteneur dans lequel Three.js va injecter son canvas -->
   <div ref="containerEl" class="viz-3d-container"></div>
 </template>
 
@@ -7,7 +6,6 @@
 import { ref, onMounted, onBeforeUnmount } from 'vue'
 import * as THREE from 'three'
 
-// Props : métriques audio venant du parent
 const props = defineProps({
   metrics: {
     type: Object,
@@ -17,65 +15,53 @@ const props = defineProps({
 
 const containerEl = ref(null)
 
-// Three.js
 let scene, camera, renderer
 let heroGroup, heroGeometry, heroMaterial
-let heroBlobs = []       // blobs qui composent le "fluide"
-let basePositions = null // positions de base de la géométrie
-let spheres = []         // autres boules
+let heroBlobs = []
+let basePositions = null
+let spheres = []
 let animationId = null
 let clock
 let lastTime = 0
 
-// pour le parallax
 const pointer = { x: 0, y: 0 }
 
-// pour détecter les "impacts" de musique
 let previousRms = 0
 
-// paramètres du tunnel / cône
-const TUNNEL_Z_FAR = -40   // début du tunnel (loin)
-const TUNNEL_Z_NEAR = -8   // zone proche de la boule avant de passer devant
-const CONE_RADIUS_FAR = 2.5      // rayon du cône loin derrière
-const CONE_RADIUS_AT_HERO = 4.0  // rayon minimal autour de la boule centrale (ne la touche pas)
-const CONE_RADIUS_NEAR = 8.0     // rayon du cône vers la caméra (très écarté)
+const TUNNEL_Z_FAR = -40
+const TUNNEL_Z_NEAR = -8
+const CONE_RADIUS_FAR = 2.5
+const CONE_RADIUS_AT_HERO = 4.0
+const CONE_RADIUS_NEAR = 8.0
 
-// rayon "de base" de la boule centrale (géométrie)
 const HERO_BASE_RADIUS = 1.2
 
-// --- système de formes procédurales pour le coeur --- //
 const SHAPES = ['circle', 'triangle', 'square']
-let currentShapeIndex = 0      // 0 = circle
-let nextShapeIndex = 0         // cible pendant la transition
-let shapeBlend = 0             // interpolation 0..1 entre current & next
+let currentShapeIndex = 0
+let nextShapeIndex = 0
+let shapeBlend = 0
 let shapeTransitioning = false
 let shapeTransitionDuration = 3.5
-let shapeHoldTime = 0          // temps passé dans la forme actuelle (hors transition)
-let intensitySmooth = 0        // intensité lissée (pour la logique de forme)
+let shapeHoldTime = 0
+let intensitySmooth = 0
 
-// "burst" global déclenché par les beats pour renforcer les déformations
 let beatBurst = 0
 
-// --- état de "fluid split" --- //
-let splitAmount = 0    // 0 = une seule masse, 1 = blobs pleinement séparés
+let splitAmount = 0
 let splitTarget = 0
-let splitCooldown = 0  // évite de repasser instantanément en mode "fusion"
+let splitCooldown = 0
 
-// --- paramètres pixel art --- //
-const PIXEL_SCALE = 0.2 // 0.3–0.5 = plus ou moins gros pixels
+const PIXEL_SCALE = 0.2
 
 function randomRange(min, max) {
   return min + Math.random() * (max - min)
 }
 
-// quantification simple (pour limiter la palette)
 function quantize(v, steps) {
   return Math.round(v * steps) / steps
 }
 
-// calcule le rayon idéal du cône pour une profondeur z
 function getConeRadiusForZ(z) {
-  // entre TUNNEL_Z_FAR et 0 (plan de la boule)
   if (z <= 0) {
     const t = THREE.MathUtils.clamp(
       (z - TUNNEL_Z_FAR) / (0 - TUNNEL_Z_FAR),
@@ -85,23 +71,16 @@ function getConeRadiusForZ(z) {
     return THREE.MathUtils.lerp(CONE_RADIUS_FAR, CONE_RADIUS_AT_HERO, t)
   }
 
-  // entre 0 et la zone proche de la caméra
   const cameraMaxZ = (camera?.position.z ?? 6) + 2
   const t = THREE.MathUtils.clamp(z / cameraMaxZ, 0, 1)
   return THREE.MathUtils.lerp(CONE_RADIUS_AT_HERO, CONE_RADIUS_NEAR, t)
 }
 
-/**
- * Facteur de forme procédural en fonction du type (circle, triangle, square)
- * On travaille en coordonnées polaires dans le plan XZ (autour de l'axe Y).
- * nx, ny, nz = direction normalisée du sommet (à partir de basePositions).
- */
 function shapeRadiusFactor(shape, nx, ny, nz, t, intensity, burst) {
-  const angle = Math.atan2(nz, nx) // [-π, π]
-  const a = angle + t * 0.3       // légère rotation continue
+  const angle = Math.atan2(nz, nx)
+  const a = angle + t * 0.3
 
   if (shape === 'circle') {
-    // cercle organique : légères ondulations radiales
     const wobble =
       0.05 * Math.sin(5 * a + t * 2) +
       0.03 * Math.sin(11 * a - t * 1.3)
@@ -109,68 +88,58 @@ function shapeRadiusFactor(shape, nx, ny, nz, t, intensity, burst) {
   }
 
   if (shape === 'triangle') {
-    // "triangle" / 3 lobes : symétrie d'ordre 3
     const k = 3
     const s = Math.cos(k * a)
-    const tri = Math.abs(s) // 3 bosses
+    const tri = Math.abs(s)
     const edges =
       0.25 * Math.sin(k * a * 2 + t * 3) * (0.5 + intensity + burst)
     return 0.8 + 0.45 * tri + edges
   }
 
   if (shape === 'square') {
-    // "carré" / 4 lobes : symétrie d'ordre 4
     const k = 4
     const c = Math.abs(Math.cos(k * a))
     const s = Math.abs(Math.sin(k * a))
-    const sq = Math.max(c, s) // 4 grands lobes
+    const sq = Math.max(c, s)
     const chamfer =
-      0.15 * Math.sin(k * a * 1.5 - t * 2.2) * (0.5 + intensity) // coin chanfreiné
+      0.15 * Math.sin(k * a * 1.5 - t * 2.2) * (0.5 + intensity)
     return 0.85 + 0.4 * sq + chamfer + burst * 0.15
   }
 
   return 1
 }
 
-// renvoie l'index de forme souhaité en fonction de l'intensité lissée
 function getDesiredShapeIndex(intensity) {
-  if (intensity < 0.25) return 0 // circle
-  if (intensity < 0.6) return 1  // triangle
-  return 2                       // square
+  if (intensity < 0.25) return 0
+  if (intensity < 0.6) return 1
+  return 2
 }
 
-// met à jour l'état de forme (changement circle->triangle->square de manière logique)
 function updateShapeState(dt, intensitySmoothed) {
   const desired = getDesiredShapeIndex(intensitySmoothed)
 
   if (!shapeTransitioning) {
-    // temps passé dans la forme actuelle
     shapeHoldTime += dt
 
-    // durée minimale par forme pour être lisible
-    const minHoldPerShape = [5, 4, 3] // circle, triangle, square
+    const minHoldPerShape = [5, 4, 3]
     const minHold = minHoldPerShape[currentShapeIndex]
 
-    // si l'intensité veut une nouvelle forme et qu'on a respecté la durée mini
     if (desired !== currentShapeIndex && shapeHoldTime > minHold) {
       shapeTransitioning = true
       shapeBlend = 0
       nextShapeIndex = desired
     }
   } else {
-    // interpolation dans le temps
     shapeBlend = THREE.MathUtils.clamp(
       shapeBlend + dt / shapeTransitionDuration,
       0,
       1
     )
 
-    // courbe d'easing douce (in-out)
     const eased = shapeBlend * shapeBlend * (3 - 2 * shapeBlend)
     shapeBlend = eased
 
     if (shapeBlend >= 0.999) {
-      // fin de transition
       currentShapeIndex = nextShapeIndex
       shapeTransitioning = false
       shapeBlend = 0
@@ -179,9 +148,6 @@ function updateShapeState(dt, intensitySmoothed) {
   }
 }
 
-/**
- * Initialisation Three.js
- */
 function initThree() {
   const container = containerEl.value
   if (!container) return
@@ -192,21 +158,17 @@ function initThree() {
   scene = new THREE.Scene()
   scene.background = new THREE.Color(0x050509)
 
-  // Caméra un peu en retrait, regardant le centre (où se trouve la grosse boule)
   camera = new THREE.PerspectiveCamera(60, width / height, 0.1, 100)
   camera.position.z = 6
   camera.lookAt(0, 0, 0)
 
-  // --- RENDERER STYLE PIXEL ART --- //
   renderer = new THREE.WebGLRenderer({
-    antialias: false,      // pas de lissage
+    antialias: false,
     powerPreference: 'high-performance',
   })
-  // expo globale un peu réduite pour un rendu moins "cramé"
   renderer.toneMappingExposure = 0.85
 
-  renderer.setPixelRatio(1) // on garde le contrôle de la "résolution"
-  // résolution interne plus basse pour des gros pixels
+  renderer.setPixelRatio(1)
   renderer.setSize(width * PIXEL_SCALE, height * PIXEL_SCALE, false)
   renderer.domElement.style.width = width + 'px'
   renderer.domElement.style.height = height + 'px'
@@ -214,7 +176,6 @@ function initThree() {
   renderer.domElement.style.imageRendering = 'crisp-edges'
   container.appendChild(renderer.domElement)
 
-  // --- Éclairage plus sombre & rétro --- //
   const ambientLight = new THREE.AmbientLight(0x101020, 0.18)
   scene.add(ambientLight)
 
@@ -230,21 +191,20 @@ function initThree() {
   pointLight.position.set(0, 0, 4)
   scene.add(pointLight)
 
-  // --- Boule centrale organique multi-blobs (fluide) --- //
-  heroGeometry = new THREE.IcosahedronGeometry(HERO_BASE_RADIUS, 3) // low-poly
+  heroGeometry = new THREE.IcosahedronGeometry(HERO_BASE_RADIUS, 3)
   basePositions = heroGeometry.attributes.position.array.slice()
 
   heroMaterial = new THREE.MeshStandardMaterial({
     color: new THREE.Color(0x88ccff),
     roughness: 0.4,
     metalness: 0.2,
-    flatShading: true, // faces bien visibles
+    flatShading: true,
   })
 
   heroGroup = new THREE.Group()
   heroBlobs = []
 
-  const BLOB_COUNT = 3 // nombre de "morceaux" possibles du fluide
+  const BLOB_COUNT = 3
 
   for (let i = 0; i < BLOB_COUNT; i++) {
     const blob = new THREE.Mesh(heroGeometry, heroMaterial)
@@ -254,12 +214,10 @@ function initThree() {
 
   scene.add(heroGroup)
 
-  // --- Création de plusieurs boules dans un "cône" autour du centre --- //
   const SPHERE_COUNT = 40
 
   for (let i = 0; i < SPHERE_COUNT; i++) {
     const radius = 0.2 + Math.random() * 0.6
-    // moins de segments pour un look plus rétro
     const geo = new THREE.SphereGeometry(radius, 12, 12)
 
     const mat = new THREE.MeshStandardMaterial({
@@ -275,12 +233,11 @@ function initThree() {
 
     const mesh = new THREE.Mesh(geo, mat)
 
-    // Position initiale : profondeur aléatoire dans le tunnel
     const z = TUNNEL_Z_FAR + Math.random() * (TUNNEL_Z_NEAR - TUNNEL_Z_FAR)
     const baseConeRadius = getConeRadiusForZ(z)
 
     const angle = Math.random() * Math.PI * 2
-    const radialFactor = 0.8 + Math.random() * 0.4  // 80% à 120% du rayon du cône
+    const radialFactor = 0.8 + Math.random() * 0.4
     const radial = baseConeRadius * radialFactor
 
     const x = Math.cos(angle) * radial
@@ -288,17 +245,16 @@ function initThree() {
 
     mesh.position.set(x, y, z)
 
-    // Données pour l'animation
     mesh.userData = {
       baseRadius: radius,
-      speed: 10 + Math.random() * 10, // unités par seconde
+      speed: 10 + Math.random() * 10,
       angle,
       radialFactor,
       spinSpeed: (Math.random() - 0.5) * 0.5,
-      state: 'idle',              // 'idle' | 'exploding'
+      state: 'idle',
       explodeStartTime: 0,
       explodeDuration: 0.5 + Math.random() * 0.3,
-      currentRadius: radius,      // rayon courant (mis à jour avec le scale)
+      currentRadius: radius,
     }
 
     spheres.push(mesh)
@@ -322,7 +278,6 @@ function onPointerMove(event) {
   const x = (event.clientX - rect.left) / rect.width
   const y = (event.clientY - rect.top) / rect.height
 
-  // Normalisation -1..1
   pointer.x = (x - 0.5) * 2
   pointer.y = (y - 0.5) * 2
 }
@@ -341,7 +296,6 @@ function onResize() {
   renderer.domElement.style.height = height + 'px'
 }
 
-// Respawn d'une boule tout au fond du cône (loin & encore écartée du centre)
 function respawnSphere(mesh) {
   const z = TUNNEL_Z_FAR + Math.random() * (TUNNEL_Z_NEAR - TUNNEL_Z_FAR)
   const baseConeRadius = getConeRadiusForZ(z)
@@ -365,9 +319,6 @@ function respawnSphere(mesh) {
   mesh.visible = true
 }
 
-/**
- * Boucle d’animation 3D
- */
 function animate() {
   animationId = requestAnimationFrame(animate)
 
@@ -379,30 +330,23 @@ function animate() {
 
   const { rms, bassEnergy, midEnergy, trebleEnergy } = props.metrics
 
-  // Intensité globale (0–1)
   const intensity = Math.min(rms * 3, 1)
 
-  // Intensité lissée pour des transitions plus stables
   const smoothing = 0.03
   intensitySmooth += (intensity - intensitySmooth) * smoothing
 
-  // Détection d'un "beat" simple : montée rapide du RMS
   const rmsDelta = rms - previousRms
   const isBeat = rms > 0.15 && rmsDelta > 0.06
   previousRms = rms
 
-  // --- Gestion du "burst" (évènements forts) ---
   if (isBeat) {
     beatBurst = Math.min(1, beatBurst + 0.35 * (0.3 + intensity))
   }
-  // décroissance douce dans le temps
   const decay = Math.exp(-dt * 3.0)
   beatBurst *= decay
 
-  // --- Gestion des transitions de formes de façon logique ---
   updateShapeState(dt, intensitySmooth)
 
-  // --- Parallax : caméra qui suit doucement la souris ---
   const parallaxStrength = 1
   const targetX = pointer.x * parallaxStrength
   const targetY = -pointer.y * parallaxStrength
@@ -411,7 +355,6 @@ function animate() {
   camera.position.y += (targetY - camera.position.y) * 0.06
   camera.lookAt(0, 0, 0)
 
-  // --- Boule principale / fluide : forme procédurale + déformation organique ---
   let heroScale = 1
   if (heroGeometry && basePositions) {
     const geom = heroGeometry
@@ -438,14 +381,12 @@ function animate() {
       const ny = oy / r
       const nz = oz / r
 
-      // déformation organique multi-fréquences
       const wave =
         Math.sin(r * 3 + t * (1 + intensity * 3)) * bassInfluence +
         Math.sin((ox + t * 1.5) * 2) * midInfluence +
         Math.sin((oz - t * 2.0) * 4) * trebInfluence +
         Math.sin((nx + ny + nz) * 6 + t * 4) * 0.1 * (beatBurst + intensity)
 
-      // facteur de forme (circle / triangle / square) interpolé
       const fCurrent = shapeRadiusFactor(
         currentShape,
         nx,
@@ -469,7 +410,6 @@ function animate() {
       const organicAmount = 0.25 + intensity * 0.6 + beatBurst * 0.45
       let radius = HERO_BASE_RADIUS * fShape + wave * organicAmount
 
-      // sécurité : évite de trop rentrer ou exploser
       radius = THREE.MathUtils.clamp(radius, 0.4, 3.5)
 
       positions[i] = nx * radius
@@ -481,7 +421,6 @@ function animate() {
     geom.computeVertexNormals()
     geom.attributes.normal.needsUpdate = true
 
-    // Respiration de la masse principale
     heroScale = 1 + intensity * 0.7 + beatBurst * 0.3
 
     if (heroGroup) {
@@ -489,12 +428,10 @@ function animate() {
     }
   }
 
-  // --- Logique de split / fusion des blobs (effet fluide) ---
   {
-    // quand l'énergie est forte, on vise le split
     if (intensitySmooth > 0.55 || beatBurst > 0.4) {
       splitTarget = 1
-      splitCooldown = 1.5 // on garde un peu le split même si l'énergie retombe
+      splitCooldown = 1.5
     } else {
       if (splitCooldown > 0) {
         splitCooldown -= dt
@@ -508,9 +445,8 @@ function animate() {
     splitAmount += (splitTarget - splitAmount) * Math.min(1, splitLerpSpeed * dt)
     splitAmount = THREE.MathUtils.clamp(splitAmount, 0, 1)
 
-    // placement des blobs autour du centre
     const blobCount = heroBlobs.length
-    const baseRadius = 0.8 // rayon max de séparation
+    const baseRadius = 0.8
     const dynamicRadius =
       baseRadius * (0.3 + 0.7 * intensitySmooth) * splitAmount
 
@@ -525,13 +461,11 @@ function animate() {
 
       blob.position.set(x, y, z)
 
-      // chaque blob légèrement plus petit quand ils sont séparés, pour un côté fluide
       const localScale = 1 - splitAmount * 0.25
       blob.scale.setScalar(localScale)
     }
   }
 
-  // Rotation : plus agressif quand ça tape fort
   if (heroGroup) {
     const baseRotSpeed = 0.01
     const extraRotSpeed = 0.06 * (intensity + beatBurst)
@@ -539,7 +473,6 @@ function animate() {
     heroGroup.rotation.y += baseRotSpeed * 0.8 + extraRotSpeed * 0.7
   }
 
-  // --- Couleurs globales : mix bass/mid/treble ---
   const totalEnergy = bassEnergy + midEnergy + trebleEnergy || 1
   const bassRatio = bassEnergy / totalEnergy
   const midRatio = midEnergy / totalEnergy
@@ -549,24 +482,20 @@ function animate() {
   let saturation = 0.5 + 0.3 * (intensity + 0.5 * beatBurst)
   let lightness = 0.35 + 0.12 * (1 - intensity)
 
-  // 🎨 quantification de la palette pour le look rétro
   hue = quantize(hue, 8)
   saturation = quantize(saturation, 4)
   lightness = quantize(lightness, 4)
 
   heroMaterial.color.setHSL(hue, saturation, lightness)
 
-  // rayon effectif de la boule centrale, avec un petit padding de sécurité
   const heroEffectiveRadius = HERO_BASE_RADIUS * heroScale * 1.2
 
-  // --- Boules du tunnel : avancent vers l'utilisateur + explosions ---
   const toRespawn = []
 
   spheres.forEach(mesh => {
     const ud = mesh.userData
     const mat = mesh.material
 
-    // Explosion déclenchée uniquement sur beat + 30% de proba pour chaque boule idle
     if (isBeat && ud.state === 'idle' && Math.random() < 0.3) {
       ud.state = 'exploding'
       ud.explodeStartTime = t
@@ -576,21 +505,18 @@ function animate() {
       const progress = (t - ud.explodeStartTime) / ud.explodeDuration
 
       if (progress >= 1) {
-        // Fin de l'explosion : on respawn la boule au fond du tunnel
         respawnSphere(mesh)
       } else {
         const p = progress
-        // Scale qui gonfle puis se dissipe
+
         const explosionScale =
           1 + (2.5 + intensity * 2) * Math.sin(p * Math.PI)
         mesh.scale.setScalar(explosionScale)
         ud.currentRadius = ud.baseRadius * explosionScale
 
-        // Légère poussée radiale
         const dir = mesh.position.clone().normalize()
         mesh.position.addScaledVector(dir, 0.5 * p)
 
-        // Glow + fade out
         let localHue = (hue + ud.explodeStartTime * 0.1) % 1
         localHue = quantize(localHue, 8)
         const lSat = quantize(saturation, 4)
@@ -604,20 +530,16 @@ function animate() {
       return
     }
 
-    // État normal : la boule avance vers la caméra
-    const speed = ud.speed * (0.4 + intensity * 1.6) // plus rapide quand ça tape
+    const speed = ud.speed * (0.4 + intensity * 1.6)
     mesh.position.z += speed * dt
 
-    // Rayon du cône à cette profondeur
     const baseConeRadius = getConeRadiusForZ(mesh.position.z)
 
-    // Légère rotation autour de l'axe du tunnel (effet spirale)
     ud.angle += ud.spinSpeed * dt
     const radial = baseConeRadius * ud.radialFactor
     mesh.position.x = Math.cos(ud.angle) * radial
     mesh.position.y = Math.sin(ud.angle) * radial * 0.6
 
-    // Mise à l'échelle en fonction de la profondeur (perspective renforcée)
     const depthFactor = THREE.MathUtils.clamp(
       (mesh.position.z - TUNNEL_Z_FAR) /
         ((camera.position.z + 2) - TUNNEL_Z_FAR),
@@ -629,7 +551,6 @@ function animate() {
     mesh.scale.setScalar(scale)
     ud.currentRadius = ud.baseRadius * scale
 
-    // Couleur / glow qui suit le spectre (quantifié aussi)
     let localHue = (hue + ud.angle * 0.05) % 1
     localHue = quantize(localHue, 8)
     const lSat2 = quantize(saturation * 0.9, 4)
@@ -640,13 +561,11 @@ function animate() {
     mat.emissiveIntensity = 0.15 + intensity * 0.45
     mat.opacity = 1
 
-    // Respawn uniquement quand la boule est passée clairement derrière la caméra
     if (mesh.position.z > camera.position.z + 1.0) {
       toRespawn.push(mesh)
     }
   })
 
-  // 1) Évite les collisions avec la boule centrale (en XY)
   const centerPadding = 0.15
   spheres.forEach(mesh => {
     const ud = mesh.userData
@@ -664,7 +583,6 @@ function animate() {
     }
   })
 
-  // 2) Évite les superpositions entre bulles (petit système de répulsion)
   const pairPadding = 0.08
   for (let i = 0; i < spheres.length; i++) {
     const a = spheres[i]
@@ -709,7 +627,6 @@ function animate() {
     }
   }
 
-  // Respawn après les corrections de position
   toRespawn.forEach(mesh => respawnSphere(mesh))
 
   renderer.render(scene, camera)

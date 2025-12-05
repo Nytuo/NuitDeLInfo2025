@@ -81,7 +81,7 @@
                         background: rgba(0, 50, 0, 0.5);
                     "
                 >
-                    🔄 RETRY MISSION
+                    RETRY MISSION
                 </button>
             </div>
         </div>

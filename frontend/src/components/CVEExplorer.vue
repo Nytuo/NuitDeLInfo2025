@@ -12,7 +12,7 @@
         <div class="flex-1 overflow-auto">
             <div class="p-4 space-y-4">
                 <div class="bg-white rounded-lg shadow-md p-4">
-                    <h2 class="text-sm font-bold mb-3 text-gray-800">🔍 Recherche CVE</h2>
+                    <h2 class="text-sm font-bold mb-3 text-gray-800">Recherche CVE</h2>
 
                     <div class="space-y-3">
                         <div class="relative">
@@ -42,20 +42,20 @@
                                 :disabled="loading || !searchQuery"
                                 class="flex-1 bg-red-600 text-white px-4 py-2 rounded-md text-sm font-semibold hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
                             >
-                                <span v-if="loading">🔄 Recherche...</span>
-                                <span v-else>🔍 Rechercher</span>
+                                <span v-if="loading">Recherche...</span>
+                                <span v-else>Rechercher</span>
                             </button>
                             <button
                                 @click="showThreatOverview = true"
                                 class="px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-semibold hover:bg-blue-700 transition-colors"
                             >
-                                📊 Threat Overview
+                                Threat Overview
                             </button>
                         </div>
 
                         <div class="text-xs text-gray-500 space-y-1">
-                            <div>💡 <strong>Recherche par CVE-ID:</strong> CVE-2024-1234, CVE-2023-44487</div>
-                            <div>💡 <strong>Recherche par mot-clé:</strong> "Microsoft", "Apache", "OpenSSL", "Log4j"</div>
+                            <div><strong>Recherche par CVE-ID:</strong> CVE-2024-1234, CVE-2023-44487</div>
+                            <div><strong>Recherche par mot-clé:</strong> "Microsoft", "Apache", "OpenSSL", "Log4j"</div>
                         </div>
                     </div>
                 </div>
@@ -124,12 +124,12 @@
                         </div>
 
                         <div class="mb-4">
-                            <h3 class="text-sm font-bold text-gray-800 mb-2">📝 Description</h3>
+                            <h3 class="text-sm font-bold text-gray-800 mb-2">Description</h3>
                             <p class="text-xs text-gray-700 leading-relaxed">{{ currentCVE.description }}</p>
                         </div>
 
                         <div v-if="currentCVE.cwe && currentCVE.cwe.length > 0" class="mb-4">
-                            <h3 class="text-sm font-bold text-gray-800 mb-2">🧩 CWE Associées</h3>
+                            <h3 class="text-sm font-bold text-gray-800 mb-2">CWE Associées</h3>
                             <div class="flex flex-wrap gap-2">
                                 <span
                                     v-for="cwe in currentCVE.cwe"
@@ -142,7 +142,7 @@
                         </div>
 
                         <div v-if="currentCVE.affected && currentCVE.affected.length > 0" class="mb-4">
-                            <h3 class="text-sm font-bold text-gray-800 mb-2">💻 Technologies Affectées</h3>
+                            <h3 class="text-sm font-bold text-gray-800 mb-2">Technologies Affectées</h3>
                             <div class="bg-gray-50 rounded-lg p-3">
                                 <ul class="space-y-2">
                                     <li
@@ -177,7 +177,7 @@
                 <div v-if="showThreatOverview" class="space-y-4">
                     <div class="bg-white rounded-lg shadow-md p-4">
                         <div class="flex items-center justify-between mb-4">
-                            <h2 class="text-lg font-bold text-gray-800">📈 Threat Overview</h2>
+                            <h2 class="text-lg font-bold text-gray-800">Threat Overview</h2>
                             <button
                                 @click="showThreatOverview = false"
                                 class="text-gray-500 hover:text-gray-700"
@@ -207,8 +207,8 @@
                                 :disabled="loadingThreat || !threatKeyword"
                                 class="w-full bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-semibold hover:bg-blue-700 disabled:bg-gray-400 transition-colors"
                             >
-                                <span v-if="loadingThreat">🔄 Chargement...</span>
-                                <span v-else">📊 Charger l'analyse</span>
+                                <span v-if="loadingThreat">Chargement...</span>
+                                <span v-else">Charger l'analyse</span>
                             </button>
                         </div>
 
@@ -216,24 +216,24 @@
                             <div class="grid grid-cols-2 gap-3">
                                 <div class="bg-gradient-to-br from-red-500 to-red-600 text-white rounded-lg p-3">
                                     <div class="text-2xl font-bold">{{ threatData.avgCVSS }}</div>
-                                    <div class="text-xs opacity-90">📐 Score CVSS Moyen</div>
+                                    <div class="text-xs opacity-90">Score CVSS Moyen</div>
                                 </div>
                                 <div class="bg-gradient-to-br from-purple-500 to-purple-600 text-white rounded-lg p-3">
                                     <div class="text-2xl font-bold">{{ (threatData.avgEPSS * 100).toFixed(1) }}%</div>
-                                    <div class="text-xs opacity-90">🎯 Score EPSS Moyen</div>
+                                    <div class="text-xs opacity-90">Score EPSS Moyen</div>
                                 </div>
                                 <div class="bg-gradient-to-br from-orange-500 to-orange-600 text-white rounded-lg p-3">
                                     <div class="text-2xl font-bold">{{ threatData.totalCVEs }}</div>
-                                    <div class="text-xs opacity-90">📊 Total CVE</div>
+                                    <div class="text-xs opacity-90">Total CVE</div>
                                 </div>
                                 <div class="bg-gradient-to-br from-red-700 to-red-800 text-white rounded-lg p-3">
                                     <div class="text-2xl font-bold">{{ threatData.exploited }}</div>
-                                    <div class="text-xs opacity-90">⚠️ Déjà Exploitées</div>
+                                    <div class="text-xs opacity-90">Déjà Exploitées</div>
                                 </div>
                             </div>
 
                             <div class="bg-white rounded-lg border border-gray-200 p-3">
-                                <h3 class="text-sm font-bold text-gray-800 mb-3">🔥 Top 10 CVSS</h3>
+                                <h3 class="text-sm font-bold text-gray-800 mb-3">Top 10 CVSS</h3>
                                 <div class="space-y-2">
                                     <div
                                         v-for="(cve, index) in threatData.topCVSS"
@@ -252,7 +252,7 @@
                             </div>
 
                             <div class="bg-white rounded-lg border border-gray-200 p-3">
-                                <h3 class="text-sm font-bold text-gray-800 mb-3">💥 Top 10 EPSS</h3>
+                                <h3 class="text-sm font-bold text-gray-800 mb-3">Top 10 EPSS</h3>
                                 <div class="space-y-2">
                                     <div
                                         v-for="(cve, index) in threatData.topEPSS"
@@ -268,7 +268,7 @@
                             </div>
 
                             <div class="bg-white rounded-lg border border-gray-200 p-3">
-                                <h3 class="text-sm font-bold text-gray-800 mb-3">🧩 CWE les plus fréquentes</h3>
+                                <h3 class="text-sm font-bold text-gray-800 mb-3">CWE les plus fréquentes</h3>
                                 <div class="space-y-2">
                                     <div
                                         v-for="cwe in threatData.topCWE"
@@ -352,16 +352,13 @@ const searchCVE = async () => {
     totalResults.value = 0;
 
     try {
-        // Detect if the search query is a CVE ID (CVE-YYYY-XXXXX format)
         const isCVEId = /^CVE-\d{4}-\d{4,}$/i.test(searchQuery.value.trim());
         isKeywordSearch.value = !isCVEId;
 
         let url;
         if (isCVEId) {
-            // Search by CVE ID
             url = `https://services.nvd.nist.gov/rest/json/cves/2.0?cveId=${searchQuery.value.trim()}`;
         } else {
-            // Search by keyword (vendor/product name)
             url = `https://services.nvd.nist.gov/rest/json/cves/2.0?keywordSearch=${encodeURIComponent(searchQuery.value.trim())}&resultsPerPage=1`;
         }
 
@@ -373,7 +370,6 @@ const searchCVE = async () => {
 
         const data = await response.json();
 
-        // Track total results for keyword searches
         if (data.totalResults) {
             totalResults.value = data.totalResults;
         }

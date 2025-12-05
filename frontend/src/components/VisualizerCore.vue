@@ -1,11 +1,13 @@
 <!-- Visualization.vue -->
 <template>
   <div class="visualization-root">
-    <button @click="startVisualization">
-      Démarrer la visualisation audio système
+    <button
+      class="visualization-button"
+      @click="startVisualization"
+    >
+      Selection de la source
     </button>
 
-    <!-- Composant d'analyse totalement indépendant -->
     <SystemAudioAnalyzer
       ref="analyzerRef"
       @frame="onAudioFrame"
@@ -14,7 +16,7 @@
 
     <p v-if="error" style="color:red;">{{ error }}</p>
 
-    <!-- Scène 3D qui reçoit les métriques audio -->
+    
     <AudioVisualizerScene :metrics="audioMetrics" />
   </div>
 </template>
@@ -27,7 +29,6 @@ import AudioVisualizerScene from './AudioVisualizerScene.vue'
 const analyzerRef = ref(null)
 const error = ref('')
 
-// métriques audio lues par SystemAudioAnalyzer et envoyées à la scène 3D
 const audioMetrics = ref({
   rms: 0,
   bassEnergy: 0,
@@ -44,7 +45,6 @@ function onError(msg) {
   error.value = msg
 }
 
-// Reçoit les valeurs calculées par SystemAudioAnalyzer
 function onAudioFrame(m) {
   audioMetrics.value.rms = m.rms
   audioMetrics.value.bassEnergy = m.bassEnergy
@@ -58,5 +58,15 @@ function onAudioFrame(m) {
   display: flex;
   flex-direction: column;
   gap: 12px;
+}
+
+.visualization-button {
+  border: 2px solid #333;     
+  border-radius: 6px;          
+  padding: 8px 16px;
+  max-width: 260px;            
+  width: 100%;                 
+  background: #fff;
+  cursor: pointer;
 }
 </style>
