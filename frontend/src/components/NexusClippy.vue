@@ -1,28 +1,37 @@
 <template>
     <div class="clippy-container" :class="{ 'clippy-hidden': isHidden }">
         <!-- Mascotte Chevalier Pixel Art -->
-        <div 
+        <div
             class="clippy-mascot"
             @click="toggleChat"
-            :class="{ 'clippy-idle': isIdle && !isChatOpen, 'clippy-active': isChatOpen }"
+            :class="{
+                'clippy-idle': isIdle && !isChatOpen,
+                'clippy-active': isChatOpen,
+            }"
         >
             <div class="knight-sprite">
                 <div class="knight-glow"></div>
-                <img 
-                    src="/images/knight-mascot.png" 
-                    alt="Nexus Knight" 
+                <img
+                    src="/images/knight-mascot.png"
+                    alt="Nexus Knight"
                     class="knight-img"
-                    :class="{ 'talking': isTalking, 'idle': isIdle }"
+                    :class="{ talking: isTalking, idle: isIdle }"
                 />
-                <div class="status-led" :class="{ 'active': isChatOpen }"></div>
+                <div class="status-led" :class="{ active: isChatOpen }"></div>
             </div>
         </div>
 
         <!-- Bulle de notification style terminal -->
-        <div v-if="showNotification && !isChatOpen" class="clippy-notification" @click="toggleChat">
+        <div
+            v-if="showNotification && !isChatOpen"
+            class="clippy-notification"
+            @click="toggleChat"
+        >
             <span class="notif-prefix">[NEXUS]</span>
             <span class="notif-text">{{ notificationText }}</span>
-            <button class="notif-close" @click.stop="dismissNotification">×</button>
+            <button class="notif-close" @click.stop="dismissNotification">
+                ×
+            </button>
         </div>
 
         <!-- Bulle de chat style terminal -->
@@ -33,27 +42,37 @@
                     <span>nexus@formulaire:~</span>
                 </div>
                 <div class="terminal-controls">
-                    <button @click="minimizeChat" class="ctrl-btn minimize">_</button>
-                    <button @click="toggleChat" class="ctrl-btn close">×</button>
+                    <button @click="minimizeChat" class="ctrl-btn minimize">
+                        _
+                    </button>
+                    <button @click="toggleChat" class="ctrl-btn close">
+                        ×
+                    </button>
                 </div>
             </div>
-            
+
             <div class="terminal-body" ref="chatContainer">
-                <div 
-                    v-for="(message, index) in messages" 
+                <div
+                    v-for="(message, index) in messages"
                     :key="index"
                     class="terminal-line"
                     :class="message.type"
                 >
-                    <span class="line-prefix" v-if="message.type === 'bot'">[nexus]$</span>
-                    <span class="line-prefix user" v-if="message.type === 'user'">[user]></span>
+                    <span class="line-prefix" v-if="message.type === 'bot'"
+                        >[nexus]$</span
+                    >
+                    <span
+                        class="line-prefix user"
+                        v-if="message.type === 'user'"
+                        >[user]></span
+                    >
                     <div class="line-content">
                         <p>{{ message.text }}</p>
-                        
+
                         <!-- Options style boutons rétro -->
                         <div v-if="message.options" class="option-grid">
-                            <button 
-                                v-for="opt in message.options" 
+                            <button
+                                v-for="opt in message.options"
                                 :key="opt.id"
                                 @click="selectOption(opt)"
                                 class="retro-btn"
@@ -65,30 +84,48 @@
 
                         <!-- Formulaire style DOS -->
                         <div v-if="message.fields" class="form-block">
-                            <div v-for="field in message.fields" :key="field.name" class="form-field">
-                                <label :for="'field-' + field.name">{{ field.label }}:</label>
-                                <input 
-                                    v-if="field.type === 'text' || field.type === 'email' || field.type === 'tel'"
+                            <div
+                                v-for="field in message.fields"
+                                :key="field.name"
+                                class="form-field"
+                            >
+                                <label :for="'field-' + field.name"
+                                    >{{ field.label }}:</label
+                                >
+                                <input
+                                    v-if="
+                                        field.type === 'text' ||
+                                        field.type === 'email' ||
+                                        field.type === 'tel'
+                                    "
                                     :id="'field-' + field.name"
                                     :type="field.type"
                                     v-model="formData[field.name]"
                                     :placeholder="field.placeholder"
                                     class="dos-input"
                                 />
-                                <textarea 
+                                <textarea
                                     v-if="field.type === 'textarea'"
                                     v-model="formData[field.name]"
                                     :placeholder="field.placeholder"
                                     class="dos-textarea"
                                     rows="2"
                                 ></textarea>
-                                <select 
+                                <select
                                     v-if="field.type === 'select'"
                                     v-model="formData[field.name]"
                                     class="dos-select"
                                 >
-                                    <option value="">-- {{ field.placeholder }} --</option>
-                                    <option v-for="opt in field.options" :key="opt" :value="opt">{{ opt }}</option>
+                                    <option value="">
+                                        -- {{ field.placeholder }} --
+                                    </option>
+                                    <option
+                                        v-for="opt in field.options"
+                                        :key="opt"
+                                        :value="opt"
+                                    >
+                                        {{ opt }}
+                                    </option>
                                 </select>
                             </div>
                             <button @click="submitFields" class="submit-btn">
@@ -108,7 +145,7 @@
             <!-- Barre de saisie -->
             <div class="terminal-input">
                 <span class="input-prefix">[user]></span>
-                <input 
+                <input
                     v-model="userInput"
                     @keyup.enter="sendMessage"
                     placeholder="Tapez votre message..."
@@ -137,19 +174,25 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, onUnmounted, nextTick, watch } from 'vue';
-import emailjs from '@emailjs/browser';
+import { ref, reactive, onMounted, onUnmounted, nextTick, watch } from "vue";
+import emailjs from "@emailjs/browser";
 
 // Configuration EmailJS
-const EMAILJS_SERVICE_ID = 'service_cgqx7v1';
-const EMAILJS_TEMPLATE_ID = 'template_f8pun97';
-const EMAILJS_PUBLIC_KEY = 'roNAqnoiKqIdfa610';
+const EMAILJS_SERVICE_ID = "service_cgqx7v1";
+const EMAILJS_TEMPLATE_ID = "template_f8pun97";
+const EMAILJS_PUBLIC_KEY = "roNAqnoiKqIdfa610";
 
 interface ChatMessage {
-    type: 'bot' | 'user';
+    type: "bot" | "user";
     text: string;
     options?: { id: string; label: string; icon: string }[];
-    fields?: { name: string; label: string; type: string; placeholder: string; options?: string[] }[];
+    fields?: {
+        name: string;
+        label: string;
+        type: string;
+        placeholder: string;
+        options?: string[];
+    }[];
 }
 
 const isChatOpen = ref(false);
@@ -162,29 +205,28 @@ const showNotification = ref(false);
 const notificationText = ref("Cliquez pour interagir...");
 const chatContainer = ref<HTMLElement | null>(null);
 const inputField = ref<HTMLInputElement | null>(null);
-const userInput = ref('');
-
-// Mascot image
-const mascotLoaded = ref(true);
-const mascotSrc = ref('/images/knight-mascot.png');
+const userInput = ref("");
 
 const messages = ref<ChatMessage[]>([]);
 const formData = reactive<Record<string, string>>({});
-const selectedMission = ref('');
+const selectedMission = ref("");
 
 // Sentiment
-const currentSentiment = ref('neutral');
-const sentimentText = ref('NEUTRE');
+const currentSentiment = ref("neutral");
+const sentimentText = ref("NEUTRE");
 
 // Horloge
-const currentTime = ref('');
+const currentTime = ref("");
 
 let blinkInterval: number;
 let timeInterval: number;
 
 const updateTime = () => {
     const now = new Date();
-    currentTime.value = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+    currentTime.value = now.toLocaleTimeString("fr-FR", {
+        hour: "2-digit",
+        minute: "2-digit",
+    });
 };
 
 onMounted(() => {
@@ -192,10 +234,13 @@ onMounted(() => {
         showNotification.value = true;
     }, 1500);
 
-    blinkInterval = window.setInterval(() => {
-        isBlinking.value = true;
-        setTimeout(() => isBlinking.value = false, 100);
-    }, 2500 + Math.random() * 2000);
+    blinkInterval = window.setInterval(
+        () => {
+            isBlinking.value = true;
+            setTimeout(() => (isBlinking.value = false), 100);
+        },
+        2500 + Math.random() * 2000,
+    );
 
     updateTime();
     timeInterval = window.setInterval(updateTime, 1000);
@@ -208,7 +253,7 @@ onUnmounted(() => {
 
 const talk = (duration: number) => {
     isTalking.value = true;
-    setTimeout(() => isTalking.value = false, duration);
+    setTimeout(() => (isTalking.value = false), duration);
 };
 
 const toggleChat = () => {
@@ -246,124 +291,201 @@ const scrollToBottom = async () => {
     }
 };
 
-const addBotMessage = async (text: string, options?: ChatMessage['options'], fields?: ChatMessage['fields']) => {
+const addBotMessage = async (
+    text: string,
+    options?: ChatMessage["options"],
+    fields?: ChatMessage["fields"],
+) => {
     isTyping.value = true;
-    await new Promise(r => setTimeout(r, 400 + Math.random() * 400));
+    await new Promise((r) => setTimeout(r, 400 + Math.random() * 400));
     isTyping.value = false;
-    
-    messages.value.push({ type: 'bot', text, options, fields });
+
+    messages.value.push({ type: "bot", text, options, fields });
     talk(text.length * 25);
     scrollToBottom();
 };
 
 const addUserMessage = (text: string) => {
-    messages.value.push({ type: 'user', text });
+    messages.value.push({ type: "user", text });
     analyzeSentiment(text);
     scrollToBottom();
 };
 
 const analyzeSentiment = (text: string) => {
     const lower = text.toLowerCase();
-    const positive = ['merci', 'super', 'génial', 'excellent', 'parfait', 'content', 'bien', 'cool', 'top', 'aimer'];
-    const negative = ['problème', 'erreur', 'bug', 'nul', 'mauvais', 'déteste', 'énervé', 'impossible'];
-    
-    const posCount = positive.filter(w => lower.includes(w)).length;
-    const negCount = negative.filter(w => lower.includes(w)).length;
-    
+    const positive = [
+        "merci",
+        "super",
+        "génial",
+        "excellent",
+        "parfait",
+        "content",
+        "bien",
+        "cool",
+        "top",
+        "aimer",
+    ];
+    const negative = [
+        "problème",
+        "erreur",
+        "bug",
+        "nul",
+        "mauvais",
+        "déteste",
+        "énervé",
+        "impossible",
+    ];
+
+    const posCount = positive.filter((w) => lower.includes(w)).length;
+    const negCount = negative.filter((w) => lower.includes(w)).length;
+
     if (posCount > negCount) {
-        currentSentiment.value = 'positive';
-        sentimentText.value = 'POSITIF';
+        currentSentiment.value = "positive";
+        sentimentText.value = "POSITIF";
     } else if (negCount > posCount) {
-        currentSentiment.value = 'negative';
-        sentimentText.value = 'NÉGATIF';
+        currentSentiment.value = "negative";
+        sentimentText.value = "NÉGATIF";
     } else {
-        currentSentiment.value = 'neutral';
-        sentimentText.value = 'NEUTRE';
+        currentSentiment.value = "neutral";
+        sentimentText.value = "NEUTRE";
     }
 };
 
 // Fonction de réponse IA intelligente
-const generateAIResponse = (userText: string): { text: string; options?: ChatMessage['options'] } => {
+const generateAIResponse = (
+    userText: string,
+): { text: string; options?: ChatMessage["options"] } => {
     const lower = userText.toLowerCase();
-    
+
     // Détection d'intention par mots-clés
-    if (lower.includes('contact') || lower.includes('joindre') || lower.includes('parler') || lower.includes('écrire')) {
+    if (
+        lower.includes("contact") ||
+        lower.includes("joindre") ||
+        lower.includes("parler") ||
+        lower.includes("écrire")
+    ) {
         return {
             text: "Tu veux nous contacter ? Je peux t'aider !",
-            options: [{ id: 'contact', label: 'Oui, contacter', icon: '✉️' }, { id: 'back', label: 'Non merci', icon: '↩️' }]
+            options: [
+                { id: "contact", label: "Oui, contacter", icon: "✉️" },
+                { id: "back", label: "Non merci", icon: "↩️" },
+            ],
         };
     }
-    
-    if (lower.includes('don') || lower.includes('donner') || lower.includes('soutenir') || lower.includes('aider financ')) {
+
+    if (
+        lower.includes("don") ||
+        lower.includes("donner") ||
+        lower.includes("soutenir") ||
+        lower.includes("aider financ")
+    ) {
         return {
             text: "Tu souhaites faire un don ? C'est super généreux !",
-            options: [{ id: 'donation', label: 'Faire un don', icon: '💝' }, { id: 'back', label: 'Plus tard', icon: '↩️' }]
+            options: [
+                { id: "donation", label: "Faire un don", icon: "💝" },
+                { id: "back", label: "Plus tard", icon: "↩️" },
+            ],
         };
     }
-    
-    if (lower.includes('bénévo') || lower.includes('volontaire') || lower.includes('rejoindre') || lower.includes('participer')) {
+
+    if (
+        lower.includes("bénévo") ||
+        lower.includes("volontaire") ||
+        lower.includes("rejoindre") ||
+        lower.includes("participer")
+    ) {
         return {
             text: "Tu veux devenir bénévole ? On a besoin de gens comme toi !",
-            options: [{ id: 'volunteer', label: 'Devenir bénévole', icon: '🤝' }, { id: 'back', label: 'Plus tard', icon: '↩️' }]
+            options: [
+                { id: "volunteer", label: "Devenir bénévole", icon: "🤝" },
+                { id: "back", label: "Plus tard", icon: "↩️" },
+            ],
         };
     }
-    
-    if (lower.includes('info') || lower.includes('quoi') || lower.includes('qui') || lower.includes('comment') || lower.includes('pourquoi')) {
+
+    if (
+        lower.includes("info") ||
+        lower.includes("quoi") ||
+        lower.includes("qui") ||
+        lower.includes("comment") ||
+        lower.includes("pourquoi")
+    ) {
         return {
             text: "Tu veux en savoir plus sur le Nexus Connecté ?",
-            options: [{ id: 'information', label: 'En savoir plus', icon: '📚' }, { id: 'back', label: 'Retour', icon: '↩️' }]
+            options: [
+                { id: "information", label: "En savoir plus", icon: "📚" },
+                { id: "back", label: "Retour", icon: "↩️" },
+            ],
         };
     }
-    
-    if (lower.includes('merci') || lower.includes('super') || lower.includes('génial') || lower.includes('cool')) {
+
+    if (
+        lower.includes("merci") ||
+        lower.includes("super") ||
+        lower.includes("génial") ||
+        lower.includes("cool")
+    ) {
         return {
             text: "Avec plaisir ! 😊 Je suis là pour t'aider. Autre chose ?",
             options: [
-                { id: 'contact', label: 'Contact', icon: '✉️' },
-                { id: 'donation', label: 'Don', icon: '💝' },
-                { id: 'volunteer', label: 'Bénévolat', icon: '🤝' },
-                { id: 'bye', label: 'C\'est tout !', icon: '👋' }
-            ]
+                { id: "contact", label: "Contact", icon: "✉️" },
+                { id: "donation", label: "Don", icon: "💝" },
+                { id: "volunteer", label: "Bénévolat", icon: "🤝" },
+                { id: "bye", label: "C'est tout !", icon: "👋" },
+            ],
         };
     }
-    
-    if (lower.includes('salut') || lower.includes('bonjour') || lower.includes('hello') || lower.includes('hey') || lower.includes('coucou')) {
+
+    if (
+        lower.includes("salut") ||
+        lower.includes("bonjour") ||
+        lower.includes("hello") ||
+        lower.includes("hey") ||
+        lower.includes("coucou")
+    ) {
         return {
             text: "Salut ! 👋 Je suis Nexus, ton assistant. Comment puis-je t'aider ?",
             options: [
-                { id: 'contact', label: 'Contact', icon: '✉️' },
-                { id: 'donation', label: 'Don', icon: '💝' },
-                { id: 'volunteer', label: 'Bénévolat', icon: '🤝' },
-                { id: 'information', label: 'Infos', icon: '📚' }
-            ]
+                { id: "contact", label: "Contact", icon: "✉️" },
+                { id: "donation", label: "Don", icon: "💝" },
+                { id: "volunteer", label: "Bénévolat", icon: "🤝" },
+                { id: "information", label: "Infos", icon: "📚" },
+            ],
         };
     }
-    
-    if (lower.includes('bye') || lower.includes('au revoir') || lower.includes('ciao') || lower.includes('a+')) {
-        return { text: "À bientôt ! 👋 N'hésite pas à revenir si tu as des questions." };
+
+    if (
+        lower.includes("bye") ||
+        lower.includes("au revoir") ||
+        lower.includes("ciao") ||
+        lower.includes("a+")
+    ) {
+        return {
+            text: "À bientôt ! 👋 N'hésite pas à revenir si tu as des questions.",
+        };
     }
-    
+
     // Réponse par défaut
     return {
         text: "Je ne suis pas sûr de comprendre... Voici ce que je peux faire :",
         options: [
-            { id: 'contact', label: 'Contact', icon: '✉️' },
-            { id: 'donation', label: 'Don', icon: '💝' },
-            { id: 'volunteer', label: 'Bénévolat', icon: '🤝' },
-            { id: 'information', label: 'Infos', icon: '📚' }
-        ]
+            { id: "contact", label: "Contact", icon: "✉️" },
+            { id: "donation", label: "Don", icon: "💝" },
+            { id: "volunteer", label: "Bénévolat", icon: "🤝" },
+            { id: "information", label: "Infos", icon: "📚" },
+        ],
     };
 };
 
 const sendMessage = async () => {
     const text = userInput.value.trim();
     if (!text) return;
-    
+
     addUserMessage(text);
-    userInput.value = '';
-    
-    await new Promise(r => setTimeout(r, 300));
-    
+    userInput.value = "";
+
+    await new Promise((r) => setTimeout(r, 300));
+
     const response = generateAIResponse(text);
     await addBotMessage(response.text, response.options);
 };
@@ -372,129 +494,194 @@ const startConversation = async () => {
     await addBotMessage(
         "Initialisation... Bienvenue ! Je suis Nexus, l'assistant IA du Nexus Connecté. Sélectionnez une action :",
         [
-            { id: 'contact', label: 'Contact', icon: '✉️' },
-            { id: 'donation', label: 'Don', icon: '💝' },
-            { id: 'volunteer', label: 'Bénévolat', icon: '🤝' },
-            { id: 'information', label: 'Infos', icon: '📚' }
-        ]
+            { id: "contact", label: "Contact", icon: "✉️" },
+            { id: "donation", label: "Don", icon: "💝" },
+            { id: "volunteer", label: "Bénévolat", icon: "🤝" },
+            { id: "information", label: "Infos", icon: "📚" },
+        ],
     );
 };
 
-const selectOption = async (option: { id: string; label: string; icon: string }) => {
+const selectOption = async (option: {
+    id: string;
+    label: string;
+    icon: string;
+}) => {
     addUserMessage(`${option.icon} ${option.label}`);
     selectedMission.value = option.id;
-    
-    await new Promise(r => setTimeout(r, 200));
-    
+
+    await new Promise((r) => setTimeout(r, 200));
+
     switch (option.id) {
-        case 'contact':
+        case "contact":
             await addBotMessage(
                 "Module CONTACT activé. Veuillez renseigner les champs :",
                 undefined,
                 [
-                    { name: 'name', label: 'NOM', type: 'text', placeholder: 'Votre nom' },
-                    { name: 'email', label: 'EMAIL', type: 'email', placeholder: 'email@exemple.com' },
-                    { name: 'message', label: 'MESSAGE', type: 'textarea', placeholder: 'Votre message...' }
-                ]
+                    {
+                        name: "name",
+                        label: "NOM",
+                        type: "text",
+                        placeholder: "Votre nom",
+                    },
+                    {
+                        name: "email",
+                        label: "EMAIL",
+                        type: "email",
+                        placeholder: "email@exemple.com",
+                    },
+                    {
+                        name: "message",
+                        label: "MESSAGE",
+                        type: "textarea",
+                        placeholder: "Votre message...",
+                    },
+                ],
             );
             break;
-        case 'donation':
+        case "donation":
             await addBotMessage(
                 "Module DON activé. Sélectionnez un montant :",
                 [
-                    { id: 'amount_10', label: '10€', icon: '💰' },
-                    { id: 'amount_25', label: '25€', icon: '💰' },
-                    { id: 'amount_50', label: '50€', icon: '💰' },
-                    { id: 'amount_100', label: '100€', icon: '💎' },
-                    { id: 'amount_custom', label: 'Autre', icon: '✏️' }
-                ]
+                    { id: "amount_10", label: "10€", icon: "💰" },
+                    { id: "amount_25", label: "25€", icon: "💰" },
+                    { id: "amount_50", label: "50€", icon: "💰" },
+                    { id: "amount_100", label: "100€", icon: "💎" },
+                    { id: "amount_custom", label: "Autre", icon: "✏️" },
+                ],
             );
             break;
-        case 'volunteer':
+        case "volunteer":
             await addBotMessage(
                 "Module BÉNÉVOLAT activé. Complétez votre profil :",
                 undefined,
                 [
-                    { name: 'name', label: 'NOM', type: 'text', placeholder: 'Votre nom' },
-                    { name: 'email', label: 'EMAIL', type: 'email', placeholder: 'email@exemple.com' },
-                    { name: 'skills', label: 'COMPÉTENCES', type: 'select', placeholder: 'Sélectionner', options: ['Dev', 'Design', 'Com', 'Event', 'Autre'] },
-                    { name: 'motivation', label: 'MOTIVATION', type: 'textarea', placeholder: 'Pourquoi rejoindre ?' }
-                ]
+                    {
+                        name: "name",
+                        label: "NOM",
+                        type: "text",
+                        placeholder: "Votre nom",
+                    },
+                    {
+                        name: "email",
+                        label: "EMAIL",
+                        type: "email",
+                        placeholder: "email@exemple.com",
+                    },
+                    {
+                        name: "skills",
+                        label: "COMPÉTENCES",
+                        type: "select",
+                        placeholder: "Sélectionner",
+                        options: ["Dev", "Design", "Com", "Event", "Autre"],
+                    },
+                    {
+                        name: "motivation",
+                        label: "MOTIVATION",
+                        type: "textarea",
+                        placeholder: "Pourquoi rejoindre ?",
+                    },
+                ],
             );
             break;
-        case 'information':
+        case "information":
             await addBotMessage(
                 "Le Nexus Connecté : association pour le numérique responsable.\n> Événements, ateliers, sensibilisation.\n> Objectif : tech éthique et accessible.",
                 [
-                    { id: 'info_events', label: 'Events', icon: '🎉' },
-                    { id: 'info_mission', label: 'Mission', icon: '🎯' },
-                    { id: 'back', label: 'Retour', icon: '↩️' }
-                ]
+                    { id: "info_events", label: "Events", icon: "🎉" },
+                    { id: "info_mission", label: "Mission", icon: "🎯" },
+                    { id: "back", label: "Retour", icon: "↩️" },
+                ],
             );
             break;
-        case 'amount_10':
-        case 'amount_25':
-        case 'amount_50':
-        case 'amount_100':
-            formData.amount = option.id.replace('amount_', '');
+        case "amount_10":
+        case "amount_25":
+        case "amount_50":
+        case "amount_100":
+            formData.amount = option.id.replace("amount_", "");
             await addBotMessage(
                 `Montant: ${formData.amount}€. Choisissez la récurrence :`,
                 [
-                    { id: 'recurrence_once', label: 'Une fois', icon: '1️⃣' },
-                    { id: 'recurrence_monthly', label: 'Mensuel', icon: '🔄' },
-                    { id: 'recurrence_yearly', label: 'Annuel', icon: '📅' }
-                ]
+                    { id: "recurrence_once", label: "Une fois", icon: "1️⃣" },
+                    { id: "recurrence_monthly", label: "Mensuel", icon: "🔄" },
+                    { id: "recurrence_yearly", label: "Annuel", icon: "📅" },
+                ],
             );
             break;
-        case 'recurrence_once':
-        case 'recurrence_monthly':
-        case 'recurrence_yearly':
-            formData.recurrence = option.id.replace('recurrence_', '');
-            const recurrenceLabel = formData.recurrence === 'once' ? 'unique' : 
-                                    formData.recurrence === 'monthly' ? 'mensuel' : 'annuel';
+        case "recurrence_once":
+        case "recurrence_monthly":
+        case "recurrence_yearly":
+            formData.recurrence = option.id.replace("recurrence_", "");
+            const recurrenceLabel =
+                formData.recurrence === "once"
+                    ? "unique"
+                    : formData.recurrence === "monthly"
+                      ? "mensuel"
+                      : "annuel";
             await addBotMessage(
                 `Don ${recurrenceLabel} de ${formData.amount}€. Finalisez :`,
                 undefined,
                 [
-                    { name: 'name', label: 'NOM', type: 'text', placeholder: 'Votre nom' },
-                    { name: 'email', label: 'EMAIL', type: 'email', placeholder: 'email@exemple.com' }
-                ]
+                    {
+                        name: "name",
+                        label: "NOM",
+                        type: "text",
+                        placeholder: "Votre nom",
+                    },
+                    {
+                        name: "email",
+                        label: "EMAIL",
+                        type: "email",
+                        placeholder: "email@exemple.com",
+                    },
+                ],
             );
             break;
-        case 'amount_custom':
-            await addBotMessage(
-                "Montant personnalisé :",
-                undefined,
-                [
-                    { name: 'amount', label: 'MONTANT (€)', type: 'text', placeholder: '100' },
-                    { name: 'name', label: 'NOM', type: 'text', placeholder: 'Votre nom' },
-                    { name: 'email', label: 'EMAIL', type: 'email', placeholder: 'email@exemple.com' }
-                ]
-            );
+        case "amount_custom":
+            await addBotMessage("Montant personnalisé :", undefined, [
+                {
+                    name: "amount",
+                    label: "MONTANT (€)",
+                    type: "text",
+                    placeholder: "100",
+                },
+                {
+                    name: "name",
+                    label: "NOM",
+                    type: "text",
+                    placeholder: "Votre nom",
+                },
+                {
+                    name: "email",
+                    label: "EMAIL",
+                    type: "email",
+                    placeholder: "email@exemple.com",
+                },
+            ]);
             break;
-        case 'info_events':
+        case "info_events":
             await addBotMessage(
                 "ÉVÉNEMENTS 2025:\n> Nuit de l'Info - ACTIF\n> Atelier IA - Janvier\n> Hackathon Éco - Février",
                 [
-                    { id: 'volunteer', label: 'Participer', icon: '✅' },
-                    { id: 'back', label: 'Retour', icon: '↩️' }
-                ]
+                    { id: "volunteer", label: "Participer", icon: "✅" },
+                    { id: "back", label: "Retour", icon: "↩️" },
+                ],
             );
             break;
-        case 'info_mission':
+        case "info_mission":
             await addBotMessage(
                 "MISSION:\n> Numérique accessible\n> Éthique & durable\n> Formation pour tous",
                 [
-                    { id: 'volunteer', label: 'Rejoindre', icon: '🤝' },
-                    { id: 'donation', label: 'Soutenir', icon: '💝' },
-                    { id: 'back', label: 'Retour', icon: '↩️' }
-                ]
+                    { id: "volunteer", label: "Rejoindre", icon: "🤝" },
+                    { id: "donation", label: "Soutenir", icon: "💝" },
+                    { id: "back", label: "Retour", icon: "↩️" },
+                ],
             );
             break;
-        case 'back':
+        case "back":
             await startConversation();
             break;
-        case 'bye':
+        case "bye":
             await addBotMessage("Session terminée. À bientôt !");
             setTimeout(() => {
                 isChatOpen.value = false;
@@ -512,74 +699,78 @@ const submitFields = async () => {
         await addBotMessage("[ERREUR] Email invalide. Veuillez réessayer.");
         return;
     }
-    
+
     if (formData.name && formData.name.length < 2) {
         await addBotMessage("[ERREUR] Nom trop court. Minimum 2 caractères.");
         return;
     }
-    
+
     // Détection spam basique
-    const spamWords = ['viagra', 'casino', 'lottery', 'winner', 'click here'];
-    const allText = Object.values(formData).join(' ').toLowerCase();
-    if (spamWords.some(w => allText.includes(w))) {
-        await addBotMessage("[ALERTE] Message suspect détecté. Transmission bloquée.");
+    const spamWords = ["viagra", "casino", "lottery", "winner", "click here"];
+    const allText = Object.values(formData).join(" ").toLowerCase();
+    if (spamWords.some((w) => allText.includes(w))) {
+        await addBotMessage(
+            "[ALERTE] Message suspect détecté. Transmission bloquée.",
+        );
         return;
     }
-    
+
     const filled = Object.entries(formData)
         .filter(([_, v]) => v)
         .map(([k, v]) => `${k}=${v}`)
-        .join(' | ');
-    
+        .join(" | ");
+
     addUserMessage(`[SUBMIT] ${filled}`);
-    await new Promise(r => setTimeout(r, 400));
-    
+    await new Promise((r) => setTimeout(r, 400));
+
     // Envoi réel via EmailJS
     let emailSent = false;
-    const name = formData.name || 'Utilisateur';
-    
+    const name = formData.name || "Utilisateur";
+
     // Construire le titre selon la mission
-    let title = '';
+    let title = "";
     switch (selectedMission.value) {
-        case 'contact':
-            title = `Contact: ${formData.message?.substring(0, 50) || 'Message'}...`;
+        case "contact":
+            title = `Contact: ${formData.message?.substring(0, 50) || "Message"}...`;
             break;
-        case 'donation':
-            title = `Don de ${formData.amount}€ (${formData.recurrence || 'unique'})`;
+        case "donation":
+            title = `Don de ${formData.amount}€ (${formData.recurrence || "unique"})`;
             break;
-        case 'volunteer':
-            title = `Candidature bénévole - ${formData.skills || 'Général'}`;
+        case "volunteer":
+            title = `Candidature bénévole - ${formData.skills || "Général"}`;
             break;
         default:
             title = `Demande d'information`;
     }
-    
+
     try {
         const templateParams = {
             name: name,
-            title: title
+            title: title,
         };
-        
+
         // Vérifie si les clés EmailJS sont configurées
-        if (EMAILJS_SERVICE_ID !== 'YOUR_SERVICE_ID') {
+        if ((EMAILJS_SERVICE_ID as string) !== "YOUR_SERVICE_ID") {
             await emailjs.send(
                 EMAILJS_SERVICE_ID,
                 EMAILJS_TEMPLATE_ID,
                 templateParams,
-                EMAILJS_PUBLIC_KEY
+                EMAILJS_PUBLIC_KEY,
             );
             emailSent = true;
         }
     } catch (error) {
-        console.error('Erreur EmailJS:', error);
+        console.error("Erreur EmailJS:", error);
     }
-    
+
     const currentYear = new Date().getFullYear();
-    const emailStatus = emailSent ? '📧 Email envoyé !' : '📧 (Mode démo - email non configuré)';
-    let msg = '';
-    
+    const emailStatus = emailSent
+        ? "📧 Email envoyé !"
+        : "📧 (Mode démo - email non configuré)";
+    let msg = "";
+
     switch (selectedMission.value) {
-        case 'contact':
+        case "contact":
             msg = `═══════════════════════════════
 🌟 TRANSMISSION RÉUSSIE 🌟
 ═══════════════════════════════
@@ -595,9 +786,13 @@ ${emailStatus}
 
 [STATUT: ENREGISTRÉ ✅]`;
             break;
-        case 'donation':
-            const recLabel = formData.recurrence === 'monthly' ? 'mensuel' : 
-                            formData.recurrence === 'yearly' ? 'annuel' : 'unique';
+        case "donation":
+            const recLabel =
+                formData.recurrence === "monthly"
+                    ? "mensuel"
+                    : formData.recurrence === "yearly"
+                      ? "annuel"
+                      : "unique";
             msg = `═══════════════════════════════
 🏆 UN IMMENSE 'GG', ${name.toUpperCase()} ! 🏆
 ═══════════════════════════════
@@ -613,14 +808,14 @@ ${emailStatus}
 
 [TRANSACTION SÉCURISÉE 🔐]`;
             break;
-        case 'volunteer':
+        case "volunteer":
             msg = `═══════════════════════════════
 🎉 BIENVENUE DANS LA GUILDE, ${name.toUpperCase()} ! 🎉
 ═══════════════════════════════
 
 Tu rejoins officiellement les rangs des Bénévoles du Nexus ! 🛡️
 
-Compétences enregistrées: ${formData.skills || 'Non spécifié'}
+Compétences enregistrées: ${formData.skills || "Non spécifié"}
 
 📅 Programme ${currentYear} :
 > 🎊 Nuit de l'Info - Décembre ${currentYear}
@@ -641,19 +836,16 @@ Ton soutien en ${currentYear} compte énormément !
 
 [STATUT: COMPLÉTÉ ✅]`;
     }
-    
+
     await addBotMessage(msg);
-    await new Promise(r => setTimeout(r, 1500));
-    
-    await addBotMessage(
-        "Autre action ?",
-        [
-            { id: 'contact', label: 'Nouveau', icon: '💬' },
-            { id: 'bye', label: 'Quitter', icon: '👋' }
-        ]
-    );
-    
-    Object.keys(formData).forEach(key => formData[key] = '');
+    await new Promise((r) => setTimeout(r, 1500));
+
+    await addBotMessage("Autre action ?", [
+        { id: "contact", label: "Nouveau", icon: "💬" },
+        { id: "bye", label: "Quitter", icon: "👋" },
+    ]);
+
+    Object.keys(formData).forEach((key) => (formData[key] = ""));
 };
 
 watch(messages, () => scrollToBottom(), { deep: true });
@@ -669,7 +861,7 @@ watch(messages, () => scrollToBottom(), { deep: true });
     flex-direction: column;
     align-items: flex-end;
     gap: 8px;
-    font-family: 'Courier New', monospace;
+    font-family: "Courier New", monospace;
 }
 
 /* Mascotte style pixel */
@@ -725,9 +917,16 @@ watch(messages, () => scrollToBottom(), { deep: true });
 }
 
 @keyframes knight-talk {
-    0%, 100% { transform: scale(1) rotate(0deg); }
-    25% { transform: scale(1.02) rotate(-2deg); }
-    75% { transform: scale(1.02) rotate(2deg); }
+    0%,
+    100% {
+        transform: scale(1) rotate(0deg);
+    }
+    25% {
+        transform: scale(1.02) rotate(-2deg);
+    }
+    75% {
+        transform: scale(1.02) rotate(2deg);
+    }
 }
 
 .clippy-mascot:hover .knight-img,
@@ -741,13 +940,25 @@ watch(messages, () => scrollToBottom(), { deep: true });
 }
 
 @keyframes glow-pulse {
-    0%, 100% { opacity: 0.15; transform: scale(1); }
-    50% { opacity: 0.25; transform: scale(1.05); }
+    0%,
+    100% {
+        opacity: 0.15;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.25;
+        transform: scale(1.05);
+    }
 }
 
 @keyframes idle-float {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-8px); }
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-8px);
+    }
 }
 
 .status-led {
@@ -768,8 +979,13 @@ watch(messages, () => scrollToBottom(), { deep: true });
 }
 
 @keyframes led-blink {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.6; }
+    0%,
+    100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.6;
+    }
 }
 
 /* Notification style terminal */
@@ -819,7 +1035,7 @@ watch(messages, () => scrollToBottom(), { deep: true });
     border: 2px solid #00ff88;
     display: flex;
     flex-direction: column;
-    box-shadow: 
+    box-shadow:
         0 0 20px rgba(0, 255, 136, 0.3),
         inset 0 0 50px rgba(0, 255, 136, 0.03);
 }
@@ -1025,8 +1241,13 @@ watch(messages, () => scrollToBottom(), { deep: true });
 }
 
 @keyframes cursor-blink {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0; }
+    0%,
+    100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0;
+    }
 }
 
 /* Status bar */
@@ -1052,9 +1273,18 @@ watch(messages, () => scrollToBottom(), { deep: true });
     border-radius: 50%;
 }
 
-.status-dot.positive { background: #00ff88; box-shadow: 0 0 5px #00ff88; }
-.status-dot.neutral { background: #ffcc00; box-shadow: 0 0 5px #ffcc00; }
-.status-dot.negative { background: #ff4444; box-shadow: 0 0 5px #ff4444; }
+.status-dot.positive {
+    background: #00ff88;
+    box-shadow: 0 0 5px #00ff88;
+}
+.status-dot.neutral {
+    background: #ffcc00;
+    box-shadow: 0 0 5px #ffcc00;
+}
+.status-dot.negative {
+    background: #ff4444;
+    box-shadow: 0 0 5px #ff4444;
+}
 
 /* Input bar */
 .terminal-input {
@@ -1162,35 +1392,35 @@ watch(messages, () => scrollToBottom(), { deep: true });
         right: 10px;
         left: 10px;
     }
-    
+
     .clippy-terminal {
         width: calc(100vw - 20px);
         max-width: 100%;
         max-height: 70vh;
     }
-    
+
     .clippy-mascot {
         width: 55px;
         height: 55px;
     }
-    
+
     .axolotl-body {
         width: 48px;
         height: 44px;
     }
-    
+
     .terminal-body {
         max-height: 45vh;
     }
-    
+
     .clippy-notification {
         max-width: calc(100vw - 90px);
     }
-    
+
     .option-grid {
         flex-direction: column;
     }
-    
+
     .retro-btn {
         width: 100%;
         justify-content: center;
@@ -1201,7 +1431,7 @@ watch(messages, () => scrollToBottom(), { deep: true });
     .clippy-terminal {
         width: 320px;
     }
-    
+
     .terminal-body {
         max-height: 280px;
     }
