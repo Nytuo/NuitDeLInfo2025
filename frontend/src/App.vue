@@ -6,10 +6,8 @@
     >
         <div class="scanlines"></div>
 
-        <!-- Desktop Icons -->
         <Desktop @open-window="openWindow" />
 
-        <!-- Windows -->
         <WindowFrame
             v-for="win in windows"
             :key="win.id"
@@ -39,6 +37,7 @@
             <Terminal
                 v-if="win.type === 'terminal'"
                 :konami-triggered="konamiTriggered"
+                @open-snake="openWindow('snake')"
             />
 
             <SnakeGame v-if="win.type === 'snake'" />
@@ -66,8 +65,6 @@ import SnakeGame from "./components/SnakeGame.vue";
 import SystemAudioAnalyzer from "./components/SystemAudioAnalyzer.vue";
 import Visualizer from "./components/VisualizerCore.vue";
 
-
-// Window management state
 const activeWindowId = ref("browser");
 const isDragging = ref(false);
 const dragOffset = reactive({ x: 0, y: 0 });
@@ -77,11 +74,9 @@ const resizingWindowId = ref(null);
 const resizeDirection = ref(null);
 const resizeStart = reactive({ x: 0, y: 0, w: 0, h: 0, winX: 0, winY: 0 });
 
-// App state
 const browserUrl = ref("https://nird.forge.apps.education.fr/");
 const konamiTriggered = ref(false);
 
-// Konami code detection
 const konamiCode = [
     "ArrowUp",
     "ArrowUp",
@@ -96,7 +91,6 @@ const konamiCode = [
 ];
 let konamiIndex = 0;
 
-// Windows configuration
 const windows = reactive([
     {
         id: "browser",
@@ -160,7 +154,6 @@ const windows = reactive([
     },
 ]);
 
-// Window management functions
 const focusWindow = (id) => {
     activeWindowId.value = id;
     const maxZ = Math.max(...windows.map((w) => w.z));
@@ -185,7 +178,6 @@ const openWindow = (id) => {
     }
 };
 
-// Drag functionality
 const startDrag = (e, id) => {
     if (isResizing.value) return;
     isDragging.value = true;
@@ -197,7 +189,6 @@ const startDrag = (e, id) => {
     dragOffset.y = e.clientY - win.y;
 };
 
-// Resize functionality
 const startResize = (e, id, direction) => {
     isResizing.value = true;
     resizingWindowId.value = id;
@@ -213,7 +204,6 @@ const startResize = (e, id, direction) => {
     resizeStart.winY = win.y;
 };
 
-// Mouse move handler (for drag and resize)
 const handleMouseMove = (e) => {
     if (isDragging.value && draggedWindowId.value) {
         const win = windows.find((w) => w.id === draggedWindowId.value);
@@ -232,12 +222,10 @@ const handleMouseMove = (e) => {
 
         const dir = resizeDirection.value;
 
-        // East (right edge)
         if (dir.includes("e")) {
             win.w = Math.max(minWidth, resizeStart.w + deltaX);
         }
 
-        // West (left edge)
         if (dir.includes("w")) {
             const newWidth = Math.max(minWidth, resizeStart.w - deltaX);
             if (newWidth > minWidth) {
@@ -249,12 +237,10 @@ const handleMouseMove = (e) => {
             }
         }
 
-        // South (bottom edge)
         if (dir.includes("s")) {
             win.h = Math.max(minHeight, resizeStart.h + deltaY);
         }
 
-        // North (top edge)
         if (dir.includes("n")) {
             const newHeight = Math.max(minHeight, resizeStart.h - deltaY);
             if (newHeight > minHeight) {
@@ -268,7 +254,6 @@ const handleMouseMove = (e) => {
     }
 };
 
-// Mouse up handler
 const handleMouseUp = () => {
     isDragging.value = false;
     draggedWindowId.value = null;
@@ -277,7 +262,6 @@ const handleMouseUp = () => {
     resizeDirection.value = null;
 };
 
-// Konami code detection
 const handleKeydown = (e) => {
     if (e.key === konamiCode[konamiIndex]) {
         konamiIndex++;
@@ -298,7 +282,6 @@ const triggerKonami = () => {
     }, 500);
 };
 
-// Lifecycle hooks
 onMounted(() => {
     window.addEventListener("keydown", handleKeydown);
 });
@@ -308,6 +291,4 @@ onUnmounted(() => {
 });
 </script>
 
-<style>
-/* Global styles remain in style.css */
-</style>
+<style></style>
